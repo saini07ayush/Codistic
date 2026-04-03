@@ -33,7 +33,9 @@ export default function CodeTyper() {
   const [error, setError] = useState(null);
   const [cursorPos, setCursorPos] = useState(0);
   const [elapsed, setElapsed] = useState(0);
-  const [themeName, setThemeName] = useState("dark");
+  const [themeName, setThemeName] = useState(() => {
+    return localStorage.getItem("codistic-theme") || "dark";
+  });
   const [showThemePicker, setShowThemePicker] = useState(false);
   const [user, setUser] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
@@ -44,6 +46,9 @@ export default function CodeTyper() {
   const theme = THEMES[themeName];
   const accent = LANG_COLORS[language] || THEME_ACCENTS[themeName];
   const t = theme;
+  useEffect(() => {
+    localStorage.setItem("codistic-theme", themeName);
+  }, [themeName]);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {
@@ -106,6 +111,14 @@ export default function CodeTyper() {
       e.preventDefault();
       if (!started) { setStarted(true); setStartTime(Date.now()); }
       const newTyped = typed + "    ";
+      setTyped(newTyped);
+      setCursorPos(newTyped.length);
+      return;
+    }
+    if (e.key === "Enter") {
+      e.preventDefault();
+      if (!started) { setStarted(true); setStartTime(Date.now()); }
+      const newTyped = typed + "\n";
       setTyped(newTyped);
       setCursorPos(newTyped.length);
       return;
