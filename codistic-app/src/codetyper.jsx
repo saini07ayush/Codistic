@@ -20,6 +20,7 @@ const LANG_COLORS = {
 };
 
 export default function CodeTyper() {
+  const [paused, setPaused] = useState(false);
   const [language, setLanguage] = useState("python");
   const [length, setLength] = useState("short");
   const [snippet, setSnippet] = useState(null);
@@ -82,14 +83,13 @@ export default function CodeTyper() {
   useEffect(() => { loadSnippet(); }, [loadSnippet]);
 
   useEffect(() => {
-    if (started && !finished) {
+    if (started && !finished && !paused) {
       timerRef.current = setInterval(() => {
         setElapsed(((Date.now() - startTime) / 1000).toFixed(1));
       }, 100);
     }
     return () => clearInterval(timerRef.current);
-  }, [started, finished, startTime]);
-
+  }, [started, finished, startTime, paused]);
   useEffect(() => {
     if (finished && user && snippet) {
       addDoc(collection(db, "users", user.uid, "sessions"), {
@@ -106,7 +106,7 @@ export default function CodeTyper() {
   }, [finished]);
 
   const handleKeyDown = useCallback((e) => {
-    if (finished || !snippet || showAuth || showProfile || showThemePicker) return;
+    if (finished || !snippet || showAuth || showProfile || showThemePicker || paused) return;
     if (e.key === "Tab") {
       e.preventDefault();
       if (!started) { setStarted(true); setStartTime(Date.now()); }
@@ -330,7 +330,11 @@ export default function CodeTyper() {
             </div>
             <div className="ctrl-divider" />
             <button className="reload-btn" onClick={loadSnippet}>↺ new</button>
-          </div>
+            {started && !finished && (
+              <button className="reload-btn" onClick={() => setPaused(p => !p)}>
+                {paused ? "▶ resume" : "⏸ pause"}
+              </button>
+            )}          </div>
 
           <div className="progress-bar-wrap">
             <div className="progress-bar-fill" style={{ width: snippet ? `${(typed.length / snippet.code.length) * 100}%` : "0%", background: accent }} />
