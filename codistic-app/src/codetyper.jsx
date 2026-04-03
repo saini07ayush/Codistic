@@ -222,7 +222,7 @@ export default function CodeTyper() {
         .editor-source { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: ${t.textDim}; }
         .editor-body { padding: 28px 32px; min-height: 280px; display: flex; align-items: flex-start; justify-content: flex-start; cursor: text; overflow-x: auto; width: 100%; }
         .line-numbers { display: flex; flex-direction: column; align-items: flex-end; margin-right: 24px; user-select: none; flex-shrink: 0; }
-        .line-num { font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.7; color: ${t.textDim}; min-width: 20px; text-align: right; }
+        .line-num { font-family: 'JetBrains Mono', monospace; font-size: 14px; line-height: 1.7; color: ${t.textDim}; min-width: 20px; text-align: right; }
         .code-display { font-family: 'JetBrains Mono', monospace; font-size: 14px; line-height: 1.7; white-space: pre; flex: 1; min-width: 0; width: 100%; text-align: left; outline: none; tab-size: 4; display: block; }
         .char-untyped { color: ${t.textDim}; }
         .char-correct { color: ${t.correct}; }
