@@ -6,7 +6,7 @@ import {
 } from "firebase/auth";
 import { auth, googleProvider } from "./firebase";
 
-export default function AuthPage({ theme, accent }) {
+export default function AuthPage({ theme, accent, onSuccess }) {
   const [mode, setMode] = useState("login"); // login | signup
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -20,6 +20,7 @@ export default function AuthPage({ theme, accent }) {
     setError("");
     try {
       await signInWithPopup(auth, googleProvider);
+      if (onSuccess) onSuccess();
     } catch (e) {
       setError(e.message);
     } finally {
@@ -36,6 +37,7 @@ export default function AuthPage({ theme, accent }) {
       } else {
         await signInWithEmailAndPassword(auth, email, password);
       }
+      if (onSuccess) onSuccess();
     } catch (e) {
       setError(e.message.replace("Firebase: ", "").replace(/\(auth.*\)/, "").trim());
     } finally {
@@ -93,6 +95,10 @@ export default function AuthPage({ theme, accent }) {
           box-shadow: 0 24px 80px rgba(0,0,0,0.3);
         }
         .auth-logo {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 12px;
           font-family: 'Syne', sans-serif;
           font-size: 26px;
           font-weight: 800;
@@ -104,12 +110,11 @@ export default function AuthPage({ theme, accent }) {
           font-size: 20px;
           font-weight: 600;
           color: ${t.text};
-          margin-top: -8px;
         }
         .auth-subtitle {
           font-size: 13px;
           color: ${t.textMuted};
-          margin-top: -20px;
+          margin-top: 6px;
         }
         .auth-google-btn {
           width: 100%;
@@ -203,7 +208,10 @@ export default function AuthPage({ theme, accent }) {
       <div className="auth-wrap">
         <div className="auth-glow" />
         <div className="auth-card">
-          <div className="auth-logo">codi<span>stic</span></div>
+          <div className="auth-logo">
+            <img src="/logo.jpeg" alt="Logo" style={{ width: 34, height: 34, borderRadius: 6 }} />
+            <div>codi<span>stic</span></div>
+          </div>
           <div>
             <div className="auth-title">{mode === "login" ? "Welcome back" : "Create account"}</div>
             <div className="auth-subtitle">{mode === "login" ? "Sign in to track your progress" : "Start tracking your typing speed"}</div>

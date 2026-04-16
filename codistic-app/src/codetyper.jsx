@@ -8,7 +8,7 @@ import AuthPage from "./AuthPage";
 import ProfilePage from "./ProfilePage";
 
 const LANGUAGES = ["python", "javascript", "java", "cpp", "go", "rust"];
-const LENGTHS = ["short", "medium"];
+const LENGTHS = ["short", "medium", "long"];
 
 const LANG_COLORS = {
   python: "#3B82F6",
@@ -38,6 +38,7 @@ export default function CodeTyper() {
     return localStorage.getItem("codistic-theme") || "dark";
   });
   const [showThemePicker, setShowThemePicker] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
   const [user, setUser] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
@@ -55,6 +56,9 @@ export default function CodeTyper() {
     const unsub = onAuthStateChanged(auth, (u) => {
       setUser(u);
       setAuthChecked(true);
+      if (u) {
+        setShowAuth(false);
+      }
     });
     return unsub;
   }, []);
@@ -70,14 +74,25 @@ export default function CodeTyper() {
     setElapsed(0);
     setCursorPos(0);
     clearInterval(timerRef.current);
-    try {
-      const data = await getSnippet(language, length);
-      setSnippet(data);
-    } catch (e) {
-      setError("Failed to load snippet. Check your GitHub token or connection.");
-    } finally {
-      setLoading(false);
+    
+    let attempts = 0;
+    let success = false;
+    
+    while (!success && attempts < 5) {
+      attempts++;
+      try {
+        const data = await getSnippet(language, length);
+        setSnippet(data);
+        success = true;
+      } catch (e) {
+        if (attempts >= 5) {
+          setError("Failed to load snippet automatically. Check connection.");
+        } else {
+          await new Promise(r => setTimeout(r, 600)); // wait a bit before retry
+        }
+      }
     }
+    setLoading(false);
   }, [language, length]);
 
   useEffect(() => { loadSnippet(); }, [loadSnippet]);
@@ -156,23 +171,54 @@ export default function CodeTyper() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleKeyDown]);
 
+  useEffect(() => {
+    const cursor = document.getElementById("typing-cursor");
+    if (cursor) {
+      cursor.scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'center' });
+    }
+  }, [cursorPos]);
+
   const renderCode = () => {
     if (!snippet) return null;
-    return snippet.code.split("").map((char, i) => {
+    const result = [];
+    let currentClass = null;
+    let currentText = "";
+
+    for (let i = 0; i < snippet.code.length; i++) {
+      const char = snippet.code[i];
       let cls = "char-untyped";
       if (i < typed.length) cls = typed[i] === char ? "char-correct" : "char-wrong";
       const isCursor = i === cursorPos;
-      return (
-        <span key={i} className={cls} style={{ position: "relative" }}>
-          {isCursor && <span className="cursor-blink" style={{ background: accent }} />}
-          {char}
-        </span>
-      );
-    });
+
+      if (isCursor || cls !== currentClass) {
+        if (currentText) {
+          result.push(<span key={`chunk-${i}`} className={currentClass}>{currentText}</span>);
+        }
+        if (isCursor) {
+          result.push(
+            <span key={i} className={cls} style={{ position: "relative" }}>
+              <span id="typing-cursor" className="cursor-blink" style={{ background: accent }} />
+              {char}
+            </span>
+          );
+          currentClass = null;
+          currentText = "";
+        } else {
+          currentClass = cls;
+          currentText = char;
+        }
+      } else {
+        currentText += char;
+      }
+    }
+    if (currentText) {
+      result.push(<span key="end" className={currentClass}>{currentText}</span>);
+    }
+    return result;
   };
 
   if (!authChecked) return null;
-  if (showAuth) return <AuthPage theme={t} accent={accent} onBack={() => setShowAuth(false)} />;
+  if (showAuth) return <AuthPage theme={t} accent={accent} onBack={() => setShowAuth(false)} onSuccess={() => setShowAuth(false)} />;
   if (showProfile && user) return (
     <ProfilePage user={user} theme={t} accent={accent} onBack={() => setShowProfile(false)} />
   );
@@ -191,7 +237,7 @@ export default function CodeTyper() {
         }
         .glow-orb { position: fixed; width: 600px; height: 600px; border-radius: 50%; filter: blur(120px); opacity: 0.06; pointer-events: none; z-index: 0; background: ${accent}; top: -200px; left: 20%; transition: background 0.6s; }
         nav { position: relative; z-index: 10; display: flex; align-items: center; justify-content: space-between; padding: 0 48px; height: 64px; border-bottom: 1px solid ${t.border}; backdrop-filter: blur(12px); background: ${t.navBg}; }
-        .nav-logo { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; letter-spacing: -0.5px; color: ${t.text}; }
+        .nav-logo { display: flex; align-items: center; gap: 8px; font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; letter-spacing: -0.5px; color: ${t.text}; }
         .nav-logo span { color: ${accent}; }
         .nav-center { display: flex; align-items: center; gap: 16px; }
         .nav-right { display: flex; align-items: center; gap: 10px; }
@@ -266,7 +312,10 @@ export default function CodeTyper() {
         <div className="glow-orb" />
 
         <nav>
-          <div className="nav-logo">codi<span>stic</span></div>
+          <div className="nav-logo">
+            <img src="/logo.jpeg" alt="Codistic Logo" style={{ width: 26, height: 26, borderRadius: 4 }} />
+            <div>codi<span>stic</span></div>
+          </div>
           <div className="nav-center">
             <div className="nav-stat">
               <span className="nav-stat-label">WPM</span>
@@ -282,35 +331,66 @@ export default function CodeTyper() {
             </div>
           </div>
           <div className="nav-right">
-            <div className="theme-picker-wrap">
-              <button className="btn-nav" onClick={() => setShowThemePicker((p) => !p)}>Theme</button>
-              {showThemePicker && (
-                <div className="theme-picker-dropdown">
-                  {Object.entries(THEMES).map(([key, val]) => (
-                    <button
-                      key={key}
-                      className={`theme-option ${themeName === key ? "active" : ""}`}
-                      onClick={() => { setThemeName(key); setShowThemePicker(false); }}
-                    >
-                      <div className="theme-swatch" style={{ background: THEME_ACCENTS[key] }} />
-                      {val.name}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+            {!user && (
+              <div className="theme-picker-wrap">
+                <button className="btn-nav" onClick={() => setShowThemePicker((p) => !p)}>Theme</button>
+                {showThemePicker && (
+                  <div className="theme-picker-dropdown">
+                    {Object.entries(THEMES).map(([key, val]) => (
+                      <button
+                        key={key}
+                        className={`theme-option ${themeName === key ? "active" : ""}`}
+                        onClick={() => { setThemeName(key); setShowThemePicker(false); }}
+                      >
+                        <div className="theme-swatch" style={{ background: THEME_ACCENTS[key] }} />
+                        {val.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
             {user ? (
-              <>
-                <button className="btn-nav" onClick={() => setShowProfile(true)}>Profile</button>
-                <button className="btn-nav" onClick={() => signOut(auth)}>Sign Out</button>
-              </>
+              <div className="theme-picker-wrap">
+                <button className="btn-nav" style={{ display: 'flex', alignItems: 'center', gap: 6 }} onClick={() => setShowUserMenu((p) => !p)}>
+                  Profile <span style={{ fontSize: 9, opacity: 0.7 }}>▼</span>
+                </button>
+                {showUserMenu && (
+                  <div className="theme-picker-dropdown" style={{ minWidth: 180, right: 0 }}>
+                    <div style={{ padding: '8px 12px', fontSize: 12, color: t.text, fontWeight: 500 }}>
+                      {user.email?.split('@')[0]}
+                    </div>
+                    <div style={{ height: 1, background: t.border, margin: '4px 0' }} />
+                    <button className="theme-option" onClick={() => { setShowProfile(true); setShowUserMenu(false); }}>
+                      View Stats
+                    </button>
+                    <div style={{ padding: '12px 12px 4px', fontSize: 10, textTransform: 'uppercase', color: t.textMuted }}>
+                      Themes
+                    </div>
+                    {Object.entries(THEMES).map(([key, val]) => (
+                      <button
+                        key={key}
+                        className={`theme-option ${themeName === key ? "active" : ""}`}
+                        onClick={() => { setThemeName(key); setShowUserMenu(false); }}
+                      >
+                        <div className="theme-swatch" style={{ background: THEME_ACCENTS[key] }} />
+                        {val.name}
+                      </button>
+                    ))}
+                    <div style={{ height: 1, background: t.border, margin: '4px 0' }} />
+                    <button className="theme-option" style={{ color: t.wrong }} onClick={() => { signOut(auth); setShowUserMenu(false); }}>
+                      Sign Out
+                    </button>
+                  </div>
+                )}
+              </div>
             ) : (
               <button className="btn-nav-accent" onClick={() => setShowAuth(true)}>Sign In</button>
             )}
           </div>
         </nav>
 
-        <main onClick={() => setShowThemePicker(false)}>
+        <main onClick={() => { setShowThemePicker(false); setShowUserMenu(false); }}>
           <div className="controls">
             <div className="ctrl-group">
               {LANGUAGES.map((lang) => (
@@ -324,7 +404,7 @@ export default function CodeTyper() {
             <div className="ctrl-group">
               {LENGTHS.map((l) => (
                 <button key={l} className={`ctrl-btn ${length === l ? "active" : ""}`} onClick={() => setLength(l)}>
-                  {l === "short" ? "~10 lines" : "~25 lines"}
+                  {l === "short" ? "~10 lines" : l === "medium" ? "~25 lines" : "full code (~100+ lines)"}
                 </button>
               ))}
             </div>
@@ -372,7 +452,7 @@ export default function CodeTyper() {
                     {renderCode()}
                     {cursorPos >= (snippet?.code?.length || 0) && (
                       <span style={{ position: "relative" }}>
-                        <span className="cursor-blink" style={{ background: accent }} />
+                        <span id="typing-cursor" className="cursor-blink" style={{ background: accent }} />
                       </span>
                     )}
                   </div>

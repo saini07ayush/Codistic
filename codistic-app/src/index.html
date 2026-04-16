@@ -1,0 +1,1807 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Deep Reinforcement Learning Snake Agent</title>
+  <style>
+    :root {
+      /* Accent Color Map */
+      --color-dqn: #7c6ef7;
+      --color-bfs: #3b9eff;
+      --color-dfs: #ff7043;
+      --color-ucs: #26c6a0;
+      --color-astar: #ffd740;
+      --color-bestfirst: #e040fb;
+      --color-minimax: #ff4081;
+      --color-human: #00e5ff;
+
+      /* UI Theme */
+      --bg-color: #0a0a0c;
+      --grid-line: #111118;
+      --text-main: #ffffff;
+      --text-muted: #888899;
+      --panel-bg: rgba(255, 255, 255, 0.03);
+      --panel-border: rgba(255, 255, 255, 0.08);
+      --font-family: 'Inter', system-ui, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      font-family: var(--font-family);
+      overflow: hidden;
+      /* Lock native scrolling entirely */
+    }
+
+    h1 {
+      font-size: 4rem;
+      font-weight: 800;
+      letter-spacing: -0.05em;
+      margin-bottom: 1rem;
+      text-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    }
+
+    h2 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      margin-bottom: 0.5rem;
+    }
+
+    p {
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    /* --- Hero Section --- */
+    #hero {
+      position: relative;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      overflow: hidden;
+    }
+
+    #hero-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      opacity: 0.4;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 1;
+      max-width: 800px;
+      padding: 3rem;
+      background: rgba(10, 10, 12, 0.65);
+      border-radius: 20px;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+      border: 1px solid var(--panel-border);
+    }
+
+    .subtitle {
+      font-size: 1.25rem;
+      margin-bottom: 2rem;
+    }
+
+    .tech-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      justify-content: center;
+      margin-bottom: 3rem;
+    }
+
+    .chip {
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      padding: 0.5rem 1rem;
+      border-radius: 999px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: #e2e2ec;
+      transition: all 0.3s ease;
+    }
+
+    .chip:hover {
+      background: rgba(255, 255, 255, 0.1);
+      transform: translateY(-2px);
+    }
+
+    .scroll-cta {
+      position: absolute;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1;
+      animation: bounce 2s infinite;
+      cursor: pointer;
+      opacity: 0.7;
+      transition: opacity 0.3s;
+    }
+
+    .scroll-cta:hover {
+      opacity: 1;
+    }
+
+    @keyframes bounce {
+
+      0%,
+      20%,
+      50%,
+      80%,
+      100% {
+        transform: translate(-50%, 0);
+      }
+
+      40% {
+        transform: translate(-50%, -15px);
+      }
+
+      60% {
+        transform: translate(-50%, -7px);
+      }
+    }
+
+    /* --- Hover Cards --- */
+    #hero-cards {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 1rem;
+      margin-top: 2rem;
+      opacity: 0;
+      /* Hidden initially for GSAP */
+      pointer-events: none;
+      /* Disabled until revealed */
+    }
+
+    #hero-cards.active {
+      pointer-events: all;
+    }
+
+    .hero-card {
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      padding: 1rem 1.5rem;
+      border-radius: 12px;
+      cursor: pointer;
+      text-align: left;
+      min-width: 180px;
+      transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+      border-top: 3px solid var(--card-accent);
+      opacity: 0;
+      /* Individual stagger state */
+      transform: translateY(20px);
+    }
+
+    .hero-card:hover {
+      transform: scale(1.05) translateY(-5px) !important;
+      background: rgba(255, 255, 255, 0.08);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+      border-color: var(--card-accent);
+    }
+
+    .hero-card-title {
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--text-main);
+      margin-bottom: 0.25rem;
+    }
+
+    .hero-card-sub {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* --- Side Nav --- */
+    #side-nav {
+      position: fixed;
+      left: -260px;
+      /* Hidden initially */
+      top: 0;
+      width: 240px;
+      height: 100vh;
+      background: rgba(10, 10, 12, 0.95);
+      border-right: 1px solid var(--panel-border);
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      padding: 3rem 1.5rem;
+      transition: left 0.6s cubic-bezier(0.65, 0, 0.35, 1);
+      backdrop-filter: blur(12px);
+    }
+
+    #side-nav.active {
+      left: 0;
+    }
+
+    .side-nav-title {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      margin-bottom: 2rem;
+      padding-left: 1rem;
+      font-weight: 700;
+    }
+
+    .side-nav-item {
+      padding: 0.85rem 1rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+      border-radius: 8px;
+      transition: all 0.2s;
+      margin-bottom: 0.5rem;
+      border: 1px solid transparent;
+    }
+
+    .side-nav-item:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-main);
+    }
+
+    .side-nav-item.active {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-main);
+      border-color: var(--nav-accent);
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+    }
+
+    /* --- Application Layout --- */
+    #app-container {
+      width: 100vw;
+      height: 200vh;
+      /* 100vh Hero + 100vh Slider */
+      transform: translateY(0);
+      transition: transform 0.8s cubic-bezier(0.65, 0, 0.35, 1);
+      will-change: transform;
+    }
+
+    #main-slider {
+      display: flex;
+      width: 800vw;
+      /* 8 sections * 100vw */
+      height: 100vh;
+      transform: translateX(0);
+      transition: transform 0.8s cubic-bezier(0.65, 0, 0.35, 1);
+      will-change: transform;
+    }
+
+    /* --- Algo Section --- */
+    .algo-section {
+      width: 100vw;
+      height: 100vh;
+      flex-shrink: 0;
+      /* Add 240px padding on the left for the sidebar */
+      padding: 4rem 2rem 4rem 260px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .section-header {
+      width: 100%;
+      max-width: 1200px;
+      margin-bottom: 2rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+
+    .algo-dot {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background-color: var(--section-accent);
+      box-shadow: 0 0 12px var(--section-accent);
+      margin-top: 10px;
+    }
+
+    .algo-badge {
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.25rem 0.75rem;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--section-accent);
+      border: 1px solid var(--section-accent);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      vertical-align: middle;
+      margin-left: 0.5rem;
+    }
+
+    .section-title-wrap {
+      flex-grow: 1;
+    }
+
+    .split-layout {
+      display: flex;
+      width: 100%;
+      max-width: 1200px;
+      gap: 2rem;
+    }
+
+    @media (max-width: 900px) {
+      .split-layout {
+        flex-direction: column;
+      }
+    }
+
+    .panel {
+      flex: 1;
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 16px;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .panel-header {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+    }
+
+    .chart-container {
+      flex-grow: 1;
+      position: relative;
+      min-height: 300px;
+    }
+
+    .game-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .game-canvas {
+      background: #0a0a0c;
+      border: 1px solid var(--grid-line);
+      border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+      image-rendering: pixelated;
+      /* Crisp grid lines */
+    }
+
+    .controls {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1.5rem;
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .btn {
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      transition: all 0.2s;
+    }
+
+    .btn-play {
+      background: var(--section-accent);
+      color: #000;
+      flex-grow: 1;
+    }
+
+    .btn-play:hover {
+      filter: brightness(1.2);
+    }
+
+    .btn-play:disabled {
+      opacity: 0.5;
+      filter: grayscale(1);
+      cursor: not-allowed;
+    }
+
+    .btn-stop {
+      background: rgba(255, 68, 68, 0.15);
+      color: #ff4444;
+      border: 1px solid currentColor;
+    }
+
+    .btn-stop:hover {
+      background: rgba(255, 68, 68, 0.25);
+    }
+
+    .btn-stop:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      border-color: transparent;
+    }
+
+    .speed-select {
+      background: rgba(255, 255, 255, 0.05);
+      color: white;
+      border: 1px solid var(--panel-border);
+      border-radius: 8px;
+      padding: 0.5rem;
+      font-family: inherit;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .speed-select option {
+      background: #1a1a1f;
+    }
+
+    .stat-cards {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+      margin-top: 1.5rem;
+      width: 100%;
+    }
+
+    .stat-card {
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid var(--panel-border);
+      border-radius: 12px;
+      padding: 1rem;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .stat-label {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 0.5rem;
+    }
+
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .stat-value.accent {
+      color: var(--section-accent);
+    }
+
+    /* Each section defines --section-accent locally */
+    #sec-dqn {
+      --section-accent: var(--color-dqn);
+    }
+
+    #sec-bfs {
+      --section-accent: var(--color-bfs);
+    }
+
+    #sec-dfs {
+      --section-accent: var(--color-dfs);
+    }
+
+    #sec-ucs {
+      --section-accent: var(--color-ucs);
+    }
+
+    #sec-astar {
+      --section-accent: var(--color-astar);
+    }
+
+    #sec-bestfirst {
+      --section-accent: var(--color-bestfirst);
+    }
+
+    #sec-minimax {
+      --section-accent: var(--color-minimax);
+    }
+
+    #sec-human {
+      --section-accent: var(--color-human);
+    }
+
+    /* --- Human vs AI Specific Styles --- */
+    .human-layout {
+      display: flex;
+      width: 100%;
+      max-width: 1300px;
+      gap: 1.5rem;
+      align-items: flex-start;
+    }
+
+    .human-game-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      flex-shrink: 0;
+    }
+
+    .human-right-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      min-width: 0;
+    }
+
+    .algo-picker {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      padding: 1rem;
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 12px;
+    }
+
+    .algo-pick-btn {
+      padding: 0.4rem 0.9rem;
+      border-radius: 6px;
+      border: 1px solid var(--panel-border);
+      background: transparent;
+      color: var(--text-muted);
+      font-family: inherit;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .algo-pick-btn:hover {
+      color: var(--text-main);
+      border-color: rgba(255,255,255,0.3);
+    }
+
+    .algo-pick-btn.selected {
+      color: #000;
+      border-color: transparent;
+    }
+
+    .versus-row {
+      display: flex;
+      gap: 1rem;
+      width: 100%;
+    }
+
+    .versus-card {
+      flex: 1;
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 12px;
+      padding: 1rem 1.2rem;
+    }
+
+    .versus-card-label {
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--text-muted);
+      margin-bottom: 0.6rem;
+    }
+
+    .versus-stat-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.35rem 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .versus-stat-row:last-child { border-bottom: none; }
+
+    .versus-stat-key {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .versus-stat-val {
+      font-size: 1rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .result-banner {
+      display: none;
+      text-align: center;
+      padding: 1rem;
+      border-radius: 12px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      border: 1px solid currentColor;
+    }
+
+    .result-banner.win  { color: #00e5ff; background: rgba(0,229,255,0.08); }
+    .result-banner.lose { color: #ff4444; background: rgba(255,68,68,0.08); }
+    .result-banner.tie  { color: #ffd740; background: rgba(255,215,64,0.08); }
+
+    .human-controls {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .human-canvas-wrap {
+      position: relative;
+    }
+
+    .human-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(10,10,12,0.85);
+      border-radius: 8px;
+      gap: 0.5rem;
+      backdrop-filter: blur(4px);
+      transition: opacity 0.3s;
+    }
+
+    .human-overlay.hidden { opacity: 0; pointer-events: none; }
+
+    .human-overlay-title {
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: #00e5ff;
+    }
+
+    .human-overlay-sub {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .kbd {
+      display: inline-block;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 4px;
+      padding: 0.15rem 0.4rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text-main);
+      font-family: monospace;
+    }
+
+    .ai-canvas-wrap {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .ai-label-badge {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      padding: 0.2rem 0.6rem;
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 999px;
+    }
+
+    .canvases-row {
+      display: flex;
+      gap: 1.5rem;
+      align-items: flex-start;
+      justify-content: center;
+    }
+
+    #hero {
+      position: relative;
+      height: 100vh;
+      width: 100%;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #08080c;
+    }
+
+    #hero-video {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: 0;
+      opacity: 0.55;
+    }
+
+    #hero-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to bottom,
+          rgba(8, 8, 12, 0.3) 0%,
+          rgba(8, 8, 12, 0.6) 60%,
+          rgba(8, 8, 12, 0.95) 100%);
+      z-index: 1;
+    }
+
+    #hero-text-container {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      padding: 2rem 1.5rem;
+      max-width: 780px;
+      width: 100%;
+    }
+
+    #hl-eyebrow {
+      opacity: 0;
+      transform: translateY(16px);
+      font-size: 0.72rem;
+      letter-spacing: 0.18em;
+      color: #7c6ef7;
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+      font-weight: 500;
+    }
+
+    #hl-1 {
+      opacity: 0;
+      transform: translateY(32px);
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      color: #ffffff;
+      line-height: 1.05;
+      margin-bottom: 1rem;
+    }
+
+    #hl-2 {
+      opacity: 0;
+      transform: translateY(24px);
+      font-size: clamp(1rem, 2.5vw, 1.35rem);
+      color: #9d8fff;
+      font-weight: 500;
+      margin-bottom: 1.2rem;
+    }
+
+    #hl-3 {
+      opacity: 0;
+      transform: translateY(24px);
+      font-size: clamp(0.85rem, 1.8vw, 1rem);
+      color: #666677;
+      line-height: 1.75;
+      margin-bottom: 1.5rem;
+      max-width: 560px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    #hl-4 {
+      opacity: 0;
+      transform: translateY(20px);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      justify-content: center;
+      margin-bottom: 2rem;
+    }
+
+    .tech-tag {
+      font-size: 0.75rem;
+      padding: 0.3rem 0.9rem;
+      border-radius: 999px;
+      border: 1px solid rgba(124, 110, 247, 0.3);
+      color: #7c6ef7;
+      background: rgba(124, 110, 247, 0.08);
+      font-weight: 500;
+      letter-spacing: 0.04em;
+    }
+
+
+
+    #hero-progress {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background: rgba(255, 255, 255, 0.05);
+      z-index: 10;
+    }
+
+    #hero-progress-bar {
+      height: 100%;
+      width: 0%;
+      background: #7c6ef7;
+      transition: width 0.3s ease;
+    }
+
+    body.scroll-locked {
+      overflow: hidden;
+    }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+</head>
+
+<body>
+
+  <nav id="side-nav">
+    <div class="side-nav-title">Algorithms</div>
+    <div id="side-nav-links"></div>
+  </nav>
+
+  <!-- Hero Section -->
+  <div id="app-container">
+    <section id="hero">
+
+      <video id="hero-video" autoplay muted loop playsinline src="/static/snake_loop.mp4"></video>
+
+      <div id="hero-overlay"></div>
+
+      <div id="hero-text-container">
+        <p id="hl-eyebrow">Ayush · AO1 · AI Project 2028</p>
+        <h1 id="hl-1">Deep Reinforcement Learning Snake Agent</h1>
+        <p id="hl-2">Reinforcement Learning meets Classical AI</p>
+        <p id="hl-3">
+          A Deep Q-Network agent learns to play Snake from scratch.
+          Then BFS, A*, DFS, UCS, and Minimax show how classical
+          algorithms change everything.
+        </p>
+        <div id="hl-4">
+          <span class="tech-tag">PyTorch</span>
+          <span class="tech-tag">FastAPI</span>
+          <span class="tech-tag">WebSocket</span>
+          <span class="tech-tag">28-Input State</span>
+          <span class="tech-tag">DQN</span>
+        </div>
+
+        <div id="hero-cards"></div>
+      </div>
+
+      <div id="hero-progress">
+        <div id="hero-progress-bar"></div>
+      </div>
+
+    </section>
+
+    <!-- Main Container -->
+    <div id="main-slider">
+    </div>
+  </div>
+
+  <script>
+    // --- Configuration ---
+    const ALGOS = [
+      { id: 'dqn', name: 'Pure DQN', badge: 'Deep Q-Network', statLabel: 'epsilon', desc: 'A neural network learning strictly via random exploration and delayed rewards. Fails often early on.' },
+      { id: 'bfs', name: 'DQN + BFS', badge: 'Breadth-First Search', statLabel: 'nodes', desc: 'DQN guided by an optimal unweighted shortest-path solver. Explores in all directions equally.' },
+      { id: 'dfs', name: 'DQN + DFS', badge: 'Depth-First Search', statLabel: 'nodes', desc: 'DQN guided by an aggressive solver diving deep before backtracking. Often finds sub-optimal twisted paths.' },
+      { id: 'ucs', name: 'DQN + UCS', badge: 'Uniform Cost Search', statLabel: 'cost', desc: 'DQN guided by Dijkstra\'s algorithm equivalent on uniform grid.' },
+      { id: 'astar', name: 'DQN + A*', badge: 'A* Search', statLabel: 'path', desc: 'DQN guided by A* using Manhattan distance heuristic. Extremely efficient and optimal.' },
+      { id: 'bestfirst', name: 'DQN + Greedy', badge: 'Greedy Best-First', statLabel: 'h', desc: 'DQN guided purely by Manhattan distance to food. Can get trapped in concave shapes.' },
+      { id: 'minimax', name: 'DQN + Minimax', badge: 'Alpha-Beta Pruning', statLabel: 'depth', desc: 'DQN guided by adversarial search treating the board as a game against a phantom blocker.' },
+      { id: 'human', name: 'Human vs AI', badge: 'Challenge Mode', statLabel: '—', desc: 'Pick your opponent algorithm, then prove you can outplay it. Score, moves, and survival time are tracked.' }
+    ];
+
+    const ACCENTS = {
+      'dqn': '#7c6ef7',
+      'bfs': '#3b9eff',
+      'dfs': '#ff7043',
+      'ucs': '#26c6a0',
+      'astar': '#ffd740',
+      'bestfirst': '#e040fb',
+      'minimax': '#ff4081',
+      'human': '#00e5ff'
+    };
+
+    const GRID_SIZE = 16;
+    const CANVAS_PX = 400; // 16 * 25
+    const CELL_PX = CANVAS_PX / GRID_SIZE;
+
+    // --- Generate Sections ---
+    const container = document.getElementById('main-slider');
+    const cardsContainer = document.getElementById('hero-cards');
+    const sideNavLinks = document.getElementById('side-nav-links');
+
+    ALGOS.forEach((algo, index) => {
+      // Generate Side Nav Item
+      const navItem = document.createElement('div');
+      navItem.className = 'side-nav-item';
+      navItem.style.setProperty('--nav-accent', ACCENTS[algo.id]);
+      navItem.textContent = algo.name;
+      navItem.onclick = () => jumpToSection(index);
+      navItem.dataset.index = index;
+      if (algo.id === 'human') {
+        // Add a separator line before the human entry
+        const sep = document.createElement('div');
+        sep.style.cssText = 'height:1px;background:rgba(255,255,255,0.08);margin:0.75rem 0.5rem;';
+        sideNavLinks.appendChild(sep);
+        navItem.style.color = '#00e5ff';
+        navItem.style.fontWeight = '700';
+      }
+      sideNavLinks.appendChild(navItem);
+      // 1. Generate Hover Card
+      const card = document.createElement('div');
+      card.className = 'hero-card';
+      card.style.setProperty('--card-accent', ACCENTS[algo.id]);
+      if (algo.id === 'human') {
+        card.style.borderTopColor = '#00e5ff';
+        card.style.boxShadow = '0 0 16px rgba(0,229,255,0.15)';
+      }
+      card.innerHTML = `
+        <div class="hero-card-title">${algo.name}</div>
+        <div class="hero-card-sub">${algo.badge}</div>
+      `;
+      card.onclick = () => jumpToSection(index);
+      cardsContainer.appendChild(card);
+
+      // 2. Generate Section (Keep existing section.innerHTML code!)
+      const section = document.createElement('section');
+      section.id = `sec-${algo.id}`;
+      section.className = 'algo-section';
+      section.dataset.algo = algo.id;
+
+      if (algo.id === 'human') {
+        // Custom Human vs AI section — injected below after ALGOS loop
+        section.innerHTML = `<div id="human-section-mount"></div>`;
+        container.appendChild(section);
+        return; // skip standard template
+      }
+
+      section.innerHTML = `
+        <div class="section-header">
+          <div class="algo-dot"></div>
+          <div class="section-title-wrap">
+            <h2>${algo.name} <span class="algo-badge">${algo.badge}</span></h2>
+            <p>${algo.desc}</p>
+          </div>
+        </div>
+        <div class="split-layout">
+          <div class="panel">
+            <div class="panel-header">Performance History</div>
+            <div class="chart-container">
+              <canvas id="chart-${algo.id}"></canvas>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-header">Live Simulation</div>
+            <div class="game-container">
+              <canvas id="canvas-${algo.id}" width="${CANVAS_PX}" height="${CANVAS_PX}" class="game-canvas"></canvas>
+            </div>
+            <div class="controls">
+              <button class="btn btn-play" id="play-${algo.id}" onclick="window.startAlgo('${algo.id}')">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg> Play
+              </button>
+              <button class="btn btn-stop" id="stop-${algo.id}" onclick="window.stopAlgo('${algo.id}')" disabled>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h12v12H6z"/></svg> Stop
+              </button>
+              <select class="speed-select" id="speed-${algo.id}" onchange="window.setSpeed('${algo.id}', this.value)">
+                <option value="1">1x Speed</option>
+                <option value="2">2x Speed</option>
+                <option value="10" selected>10x Speed</option>
+                <option value="50">50x Speed</option>
+                <option value="100">100x Speed</option>
+              </select>
+            </div>
+            <div class="stat-cards">
+              <div class="stat-card">
+                <div class="stat-label">Game No</div>
+                <div class="stat-value" id="stat-game-${algo.id}">0</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Score</div>
+                <div class="stat-value" id="stat-score-${algo.id}">0</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Record</div>
+                <div class="stat-value" id="stat-record-${algo.id}">0</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">${algo.statLabel}</div>
+                <div class="stat-value accent" id="stat-algostat-${algo.id}">0</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      container.appendChild(section);
+    });
+
+    // --- Canvas Renderer ---
+    function hexToRgba(hex, alpha) {
+      const r = parseInt(hex.slice(1, 3), 16);
+      const g = parseInt(hex.slice(3, 5), 16);
+      const b = parseInt(hex.slice(5, 7), 16);
+      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+
+    function renderFrame(ctx, frameData, accentColor) {
+      // 1. Fill background #0a0a0c
+      ctx.fillStyle = '#0a0a0c';
+      ctx.fillRect(0, 0, CANVAS_PX, CANVAS_PX);
+
+      // 2. Draw grid lines (0.5px, #111118)
+      ctx.strokeStyle = '#111118';
+      ctx.lineWidth = 0.5;
+      for (let i = 0; i <= GRID_SIZE; i++) {
+        const pos = i * CELL_PX;
+        ctx.beginPath(); ctx.moveTo(pos, 0); ctx.lineTo(pos, CANVAS_PX); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, pos); ctx.lineTo(CANVAS_PX, pos); ctx.stroke();
+      }
+
+      const drawCell = (x, y, color) => {
+        if (x < 0 || x >= GRID_SIZE || y < 0 || y >= GRID_SIZE) return; // boundary safeguard
+        ctx.fillStyle = color;
+        ctx.fillRect(x * CELL_PX + 1, y * CELL_PX + 1, CELL_PX - 2, CELL_PX - 2);
+      };
+
+      // 3. Draw explored cells (accent color at 12% opacity)
+      if (frameData.explored && frameData.explored.length > 0) {
+        const clr = hexToRgba(accentColor, 0.12);
+        frameData.explored.forEach(([x, y]) => drawCell(x, y, clr));
+      }
+
+      // 4. Draw path cells (accent color at 25% opacity)
+      if (frameData.path && frameData.path.length > 0) {
+        const clr = hexToRgba(accentColor, 0.25);
+        frameData.path.forEach(([x, y]) => drawCell(x, y, clr));
+      }
+
+      // 5. & 6. Draw snake
+      if (frameData.snake && frameData.snake.length > 0) {
+        const len = frameData.snake.length;
+        frameData.snake.forEach(([x, y], i) => {
+          if (i === 0) {
+            // Head: full accent + 2 white eye dots
+            drawCell(x, y, accentColor);
+
+            // compute eye positions based on body direction
+            const cx = x * CELL_PX + CELL_PX / 2;
+            const cy = y * CELL_PX + CELL_PX / 2;
+            ctx.fillStyle = 'white';
+            ctx.beginPath(); ctx.arc(cx - 3, cy - 3, 2, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(cx + 3, cy - 3, 2, 0, Math.PI * 2); ctx.fill();
+          } else {
+            // Body: accent color at decreasing opacity (1.0 -> 0.4)
+            const op = 1.0 - (0.6 * (Number(i) / (len - 1 || 1)));
+            drawCell(x, y, hexToRgba(accentColor, op));
+          }
+        });
+      }
+
+      // 7. Draw food: red circle (#ff4444) with small highlight dot
+      if (frameData.food) {
+        const [x, y] = frameData.food;
+        const cx = x * CELL_PX + CELL_PX / 2;
+        const cy = y * CELL_PX + CELL_PX / 2;
+        ctx.fillStyle = '#ff4444';
+        ctx.beginPath(); ctx.arc(cx, cy, CELL_PX / 2 - 2, 0, Math.PI * 2); ctx.fill();
+
+        ctx.fillStyle = 'white';
+        ctx.beginPath(); ctx.arc(cx - 3, cy - 3, 2, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+
+    // --- Chart & WebSocket Managers ---
+    const charts = {};
+    const wsConnections = {};
+
+    function initChart(algoId, accentColor) {
+      const ctx = document.getElementById(`chart-${algoId}`).getContext('2d');
+      charts[algoId] = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: [],
+          datasets: [
+            {
+              label: 'Score',
+              data: [],
+              borderColor: accentColor,
+              backgroundColor: hexToRgba(accentColor, 0.1),
+              borderWidth: 2,
+              fill: true,
+              tension: 0.2, // smoother line
+              pointRadius: 0
+            },
+            {
+              label: 'Mean Score',
+              data: [],
+              borderColor: hexToRgba(accentColor, 0.6),
+              borderWidth: 2,
+              borderDash: [5, 5],
+              fill: false,
+              tension: 0.2,
+              pointRadius: 0
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: false,
+          scales: {
+            x: {
+              title: { display: true, text: 'Games', color: '#888899' },
+              grid: { color: 'rgba(255,255,255,0.05)' },
+              ticks: { color: '#888899', maxTicksLimit: 10 }
+            },
+            y: {
+              beginAtZero: true,
+              title: { display: true, text: 'Score', color: '#888899' },
+              grid: { color: 'rgba(255,255,255,0.05)' },
+              ticks: { color: '#888899' },
+              suggestedMax: 50 // initial scale up to sensible number
+            }
+          },
+          plugins: { legend: { labels: { color: '#e2e2ec' } } }
+        }
+      });
+    }
+
+    class WSManager {
+      constructor(algoId) {
+        this.algoId = algoId;
+        this.ws = null;
+        this.accentColor = ACCENTS[algoId];
+        this.canvasCtx = document.getElementById(`canvas-${algoId}`).getContext('2d');
+        this.chart = charts[algoId];
+        this.gameDataBuffer = [];
+      }
+
+      connect(speed) {
+        const url = `ws://${window.location.host}/ws/${this.algoId}`;
+        this.ws = new WebSocket(url);
+
+        this.ws.onopen = () => {
+          const msg = { type: "start", algo: this.algoId, speed: parseInt(speed) };
+          this.ws.send(JSON.stringify(msg));
+          this.updateUI(true);
+        };
+
+        this.ws.onmessage = (e) => {
+          const data = JSON.parse(e.data);
+          if (data.type === 'step') {
+            // 1. Draw frame
+            renderFrame(this.canvasCtx, data, this.accentColor);
+
+            // 2. Update stats
+            document.getElementById(`stat-game-${this.algoId}`).textContent = data.game_no;
+            document.getElementById(`stat-score-${this.algoId}`).textContent = data.score;
+            document.getElementById(`stat-record-${this.algoId}`).textContent = data.record;
+            if (data.algo_stat) {
+              let v = data.algo_stat.value;
+              if (typeof v === 'number' && !Number.isInteger(v)) v = v.toFixed(2);
+              document.getElementById(`stat-algostat-${this.algoId}`).textContent = v;
+            }
+
+            // 3. Update chart if game done
+            if (data.done) {
+              const scoreData = this.chart.data.datasets[0].data;
+              const meanData = this.chart.data.datasets[1].data;
+              const labels = this.chart.data.labels;
+
+              labels.push(data.game_no);
+              scoreData.push(data.score);
+              meanData.push(data.mean_score);
+
+              // keep last 150 points for performance
+              if (labels.length > 150) {
+                labels.shift(); scoreData.shift(); meanData.shift();
+              }
+              this.chart.update();
+            }
+          }
+        };
+
+        this.ws.onclose = () => { this.updateUI(false); this.ws = null; };
+        this.ws.onerror = (err) => console.error(`[${this.algoId}] WS Error:`, err);
+      }
+
+      disconnect() {
+        if (this.ws) {
+          this.ws.send(JSON.stringify({ type: "stop" }));
+          this.ws.close();
+        }
+      }
+
+      setSpeed(newSpeed) {
+        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+          this.ws.send(JSON.stringify({ type: "set_speed", speed: parseInt(newSpeed) }));
+        }
+      }
+
+      updateUI(isPlaying) {
+        document.getElementById(`play-${this.algoId}`).disabled = isPlaying;
+        document.getElementById(`stop-${this.algoId}`).disabled = !isPlaying;
+      }
+    }
+
+    // Attach to window so buttons can trigger them
+    window.startAlgo = (algoId) => {
+      if (!wsConnections[algoId]) wsConnections[algoId] = new WSManager(algoId);
+      const speed = document.getElementById(`speed-${algoId}`).value;
+      wsConnections[algoId].connect(speed);
+    };
+
+    window.stopAlgo = (algoId) => {
+      if (wsConnections[algoId]) wsConnections[algoId].disconnect();
+    };
+
+    window.setSpeed = (algoId, speed) => {
+      if (wsConnections[algoId]) wsConnections[algoId].setSpeed(speed);
+    };
+
+    // --- Init: Render blank boards, setup observers, and reset backend ---
+    ALGOS.forEach(algo => {
+      if (algo.id === 'human') return; // human section manages its own canvas
+      initChart(algo.id, ACCENTS[algo.id]);
+      const ctx = document.getElementById(`canvas-${algo.id}`).getContext('2d');
+      renderFrame(ctx, {}, ACCENTS[algo.id]);
+
+      // Wipe saved backend data so stats start at 0 on every refresh
+      fetch(`/model/reset/${algo.id}`, { method: 'POST' }).catch(err => console.error('Reset failed:', err));
+    });
+
+
+
+
+    // ── Human vs AI Section ─────────────────────────────────────────────
+    const humanMount = document.getElementById('human-section-mount');
+    const HUMAN_ACCENT = '#00e5ff';
+    const HUMAN_GRID = 16;
+    const HUMAN_CANVAS_PX = 320;
+    const HUMAN_CELL = HUMAN_CANVAS_PX / HUMAN_GRID;
+
+    humanMount.innerHTML = `
+      <div class="section-header">
+        <div class="algo-dot" style="background:#00e5ff;box-shadow:0 0 12px #00e5ff"></div>
+        <div class="section-title-wrap">
+          <h2>Human vs AI <span class="algo-badge" style="color:#00e5ff;border-color:#00e5ff">Challenge Mode</span></h2>
+          <p>Pick your opponent, then prove you can outplay it. Arrow keys or WASD to move.</p>
+        </div>
+      </div>
+
+      <div class="human-layout">
+        <!-- Left: both canvases side by side -->
+        <div class="human-game-col">
+          <div class="canvases-row">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:0.5rem">
+              <span class="ai-label-badge" style="color:#00e5ff;border-color:rgba(0,229,255,0.3)">YOU</span>
+              <div class="human-canvas-wrap">
+                <canvas id="human-canvas" width="${HUMAN_CANVAS_PX}" height="${HUMAN_CANVAS_PX}" class="game-canvas"></canvas>
+                <div class="human-overlay" id="human-overlay">
+                  <div class="human-overlay-title">Ready?</div>
+                  <div class="human-overlay-sub">Press <span class="kbd">Start</span> to begin</div>
+                  <div style="margin-top:0.5rem;display:flex;gap:0.3rem;align-items:center">
+                    <span class="kbd">W</span><span class="kbd">A</span><span class="kbd">S</span><span class="kbd">D</span>
+                    <span style="color:var(--text-muted);font-size:0.75rem;margin-left:0.3rem">or Arrow Keys</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;align-items:center;gap:0.5rem">
+              <span class="ai-label-badge" id="ai-canvas-label">AI (A*)</span>
+              <div class="ai-canvas-wrap">
+                <canvas id="ai-canvas" width="${HUMAN_CANVAS_PX}" height="${HUMAN_CANVAS_PX}" class="game-canvas"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- Controls -->
+          <div class="human-controls">
+            <button class="btn btn-play" id="human-play-btn" style="--section-accent:#00e5ff;background:#00e5ff;color:#000;min-width:110px" onclick="window.humanStart()">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg> Start
+            </button>
+            <button class="btn btn-stop" id="human-stop-btn" onclick="window.humanStop()" disabled>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h12v12H6z"/></svg> Stop
+            </button>
+          </div>
+
+          <div class="result-banner" id="result-banner">🏆 You win! Great job.</div>
+        </div>
+
+        <!-- Right: algo picker + stats -->
+        <div class="human-right-col">
+
+          <!-- Algo picker -->
+          <div class="algo-picker">
+            <div style="width:100%;font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--text-muted);margin-bottom:0.25rem">Opponent Algorithm</div>
+            ${['bfs','dfs','ucs','astar','bestfirst','minimax'].map(id => {
+              const a = ALGOS.find(x => x.id === id);
+              return `<button class="algo-pick-btn ${id==='astar'?'selected':''}"
+                style="${id==='astar'?`background:${ACCENTS[id]};color:#000;border-color:${ACCENTS[id]}`:''};"
+                data-pick="${id}"
+                onclick="window.humanPickAlgo('${id}')">${a.badge}</button>`;
+            }).join('')}
+          </div>
+
+          <!-- Live comparison cards -->
+          <div class="versus-row">
+            <div class="versus-card" style="border-top:3px solid #00e5ff">
+              <div class="versus-card-label" style="color:#00e5ff">You</div>
+              <div class="versus-stat-row"><span class="versus-stat-key">Score</span><span class="versus-stat-val" id="h-score" style="color:#00e5ff">0</span></div>
+              <div class="versus-stat-row"><span class="versus-stat-key">Best</span><span class="versus-stat-val" id="h-best">0</span></div>
+              <div class="versus-stat-row"><span class="versus-stat-key">Moves</span><span class="versus-stat-val" id="h-moves">0</span></div>
+              <div class="versus-stat-row"><span class="versus-stat-key">Survived</span><span class="versus-stat-val" id="h-time">0s</span></div>
+            </div>
+            <div class="versus-card" style="border-top:3px solid var(--ai-color, #ffd740)" id="ai-stat-card">
+              <div class="versus-card-label" id="ai-stat-label" style="color:var(--ai-color,#ffd740)">A* AI</div>
+              <div class="versus-stat-row"><span class="versus-stat-key">Score</span><span class="versus-stat-val" id="ai-score" style="color:var(--ai-color,#ffd740)">0</span></div>
+              <div class="versus-stat-row"><span class="versus-stat-key">Best</span><span class="versus-stat-val" id="ai-best">0</span></div>
+              <div class="versus-stat-row"><span class="versus-stat-key">Moves</span><span class="versus-stat-val" id="ai-moves">0</span></div>
+              <div class="versus-stat-row"><span class="versus-stat-key">Survived</span><span class="versus-stat-val" id="ai-time">0s</span></div>
+            </div>
+          </div>
+
+          <!-- Win/Loss record -->
+          <div class="versus-card">
+            <div class="versus-card-label">Session Record</div>
+            <div class="versus-stat-row">
+              <span class="versus-stat-key">Your Wins</span>
+              <span class="versus-stat-val" id="sess-wins" style="color:#00e5ff">0</span>
+            </div>
+            <div class="versus-stat-row">
+              <span class="versus-stat-key">AI Wins</span>
+              <span class="versus-stat-val" id="sess-losses" style="color:#ff4444">0</span>
+            </div>
+            <div class="versus-stat-row">
+              <span class="versus-stat-key">Ties</span>
+              <span class="versus-stat-val" id="sess-ties" style="color:#ffd740">0</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    `;
+
+    // ── Human vs AI Game Engine ─────────────────────────────────────────
+    (() => {
+      const HG = HUMAN_GRID;
+      const CPX = HUMAN_CANVAS_PX;
+      const CELL = HUMAN_CELL;
+
+      // State
+      let pickedAlgo = 'astar';
+      let humanRunning = false;
+      let humanLoop = null;
+      let aiWs = null;
+
+      // Human game state
+      let hSnake, hDir, hNextDir, hFood, hScore, hMoves, hStartTime, hBest = 0, hDead;
+      // AI mirror state (received from WS)
+      let aiSnake = [], aiFood = null, aiScore = 0, aiBest = 0, aiMoves = 0, aiStartTime = null, aiDead = false;
+
+      // Session record
+      let sessWins = 0, sessLosses = 0, sessTies = 0;
+
+      const hCanvas = document.getElementById('human-canvas');
+      const hCtx = hCanvas.getContext('2d');
+      const aCanvas = document.getElementById('ai-canvas');
+      const aCtx = aCanvas.getContext('2d');
+
+      function randCell(exclude) {
+        let p;
+        do { p = [Math.floor(Math.random()*HG), Math.floor(Math.random()*HG)]; }
+        while (exclude.some(e => e[0]===p[0] && e[1]===p[1]));
+        return p;
+      }
+
+      function initHuman() {
+        hSnake = [[7,8],[6,8],[5,8]];
+        hDir = [1,0];
+        hNextDir = [1,0];
+        hFood = randCell(hSnake);
+        hScore = 0; hMoves = 0; hDead = false;
+        hStartTime = Date.now();
+        document.getElementById('h-score').textContent = 0;
+        document.getElementById('h-moves').textContent = 0;
+        document.getElementById('h-time').textContent = '0s';
+        document.getElementById('result-banner').style.display = 'none';
+        document.getElementById('human-overlay').classList.add('hidden');
+      }
+
+      function stepHuman() {
+        if (hDead) return;
+        hDir = hNextDir.slice();
+        const head = [hSnake[0][0]+hDir[0], hSnake[0][1]+hDir[1]];
+        // wall collision
+        if (head[0]<0||head[0]>=HG||head[1]<0||head[1]>=HG) { killHuman(); return; }
+        // self collision
+        if (hSnake.some(s=>s[0]===head[0]&&s[1]===head[1])) { killHuman(); return; }
+        hSnake.unshift(head);
+        hMoves++;
+        if (head[0]===hFood[0]&&head[1]===hFood[1]) {
+          hScore++;
+          hFood = randCell(hSnake);
+          if (hScore > hBest) { hBest = hScore; document.getElementById('h-best').textContent = hBest; }
+        } else {
+          hSnake.pop();
+        }
+        document.getElementById('h-score').textContent = hScore;
+        document.getElementById('h-moves').textContent = hMoves;
+        document.getElementById('h-time').textContent = ((Date.now()-hStartTime)/1000).toFixed(1)+'s';
+      }
+
+      function killHuman() {
+        hDead = true;
+        // Show overlay with game over message
+        const ov = document.getElementById('human-overlay');
+        ov.innerHTML = `
+          <div class="human-overlay-title" style="color:#ff4444">Game Over</div>
+          <div class="human-overlay-sub">Score: ${hScore}</div>
+          <div class="human-overlay-sub" style="margin-top:0.25rem">Press <span class="kbd">Start</span> to play again</div>`;
+        ov.classList.remove('hidden');
+        maybeShowResult();
+      }
+
+      function maybeShowResult() {
+        // Only compare once both are done or when human dies
+        if (!hDead) return;
+        const banner = document.getElementById('result-banner');
+        const hFinal = hScore;
+        const aFinal = aiScore;
+        banner.style.display = 'block';
+        if (hFinal > aFinal) {
+          banner.className = 'result-banner win';
+          banner.textContent = `🏆 You win! ${hFinal} vs ${aFinal}`;
+          sessWins++;
+        } else if (hFinal < aFinal) {
+          banner.className = 'result-banner lose';
+          banner.textContent = `🤖 AI wins! ${aFinal} vs ${hFinal}`;
+          sessLosses++;
+        } else {
+          banner.className = 'result-banner tie';
+          banner.textContent = `🤝 Tie! Both scored ${hFinal}`;
+          sessTies++;
+        }
+        document.getElementById('sess-wins').textContent = sessWins;
+        document.getElementById('sess-losses').textContent = sessLosses;
+        document.getElementById('sess-ties').textContent = sessTies;
+      }
+
+      // ── Render functions ────────────────────────────────────────────────
+      function drawBoard(ctx, snake, food, accent, dead) {
+        ctx.fillStyle = '#0a0a0c';
+        ctx.fillRect(0,0,CPX,CPX);
+        ctx.strokeStyle = '#111118';
+        ctx.lineWidth = 0.5;
+        for(let i=0;i<=HG;i++){
+          const p=i*CELL;
+          ctx.beginPath();ctx.moveTo(p,0);ctx.lineTo(p,CPX);ctx.stroke();
+          ctx.beginPath();ctx.moveTo(0,p);ctx.lineTo(CPX,p);ctx.stroke();
+        }
+        const drawCell=(x,y,color)=>{
+          ctx.fillStyle=color;
+          ctx.fillRect(x*CELL+1,y*CELL+1,CELL-2,CELL-2);
+        };
+        const len=snake.length;
+        snake.forEach(([x,y],i)=>{
+          if(i===0){
+            const col = dead ? 'rgba(255,68,68,0.6)' : accent;
+            drawCell(x,y,col);
+            const cx=x*CELL+CELL/2, cy=y*CELL+CELL/2;
+            ctx.fillStyle='white';
+            ctx.beginPath();ctx.arc(cx-3,cy-3,2,0,Math.PI*2);ctx.fill();
+            ctx.beginPath();ctx.arc(cx+3,cy-3,2,0,Math.PI*2);ctx.fill();
+          } else {
+            const op=1.0-(0.6*(i/(len-1||1)));
+            const r=parseInt(accent.slice(1,3),16);
+            const g=parseInt(accent.slice(3,5),16);
+            const b=parseInt(accent.slice(5,7),16);
+            drawCell(x,y,`rgba(${r},${g},${b},${op})`);
+          }
+        });
+        if(food){
+          const [fx,fy]=food;
+          const cx=fx*CELL+CELL/2,cy=fy*CELL+CELL/2;
+          ctx.fillStyle='#ff4444';
+          ctx.beginPath();ctx.arc(cx,cy,CELL/2-2,0,Math.PI*2);ctx.fill();
+          ctx.fillStyle='white';
+          ctx.beginPath();ctx.arc(cx-3,cy-3,2,0,Math.PI*2);ctx.fill();
+        }
+      }
+
+      function renderHuman() { drawBoard(hCtx, hSnake||[], hFood, '#00e5ff', hDead); }
+      function renderAI()    { drawBoard(aCtx, aiSnake, aiFood, ACCENTS[pickedAlgo]||'#ffd740', false); }
+
+      // ── AI WebSocket ────────────────────────────────────────────────────
+      function connectAI() {
+        if (aiWs) { try{aiWs.close();}catch(e){} aiWs=null; }
+        aiSnake=[]; aiFood=null; aiScore=0; aiMoves=0; aiStartTime=Date.now(); aiDead=false;
+        document.getElementById('ai-score').textContent=0;
+        document.getElementById('ai-moves').textContent=0;
+        document.getElementById('ai-time').textContent='0s';
+
+        const url = `ws://${window.location.host}/ws/${pickedAlgo}`;
+        aiWs = new WebSocket(url);
+        aiWs.onopen = () => {
+          aiWs.send(JSON.stringify({type:'start',algo:pickedAlgo,speed:8}));
+        };
+        aiWs.onmessage = (e) => {
+          const d = JSON.parse(e.data);
+          if (d.type==='step') {
+            aiSnake = d.snake||[];
+            aiFood  = d.food||null;
+            if (d.done) {
+              aiMoves += (d.snake||[]).length;
+              if (d.score > aiScore) aiScore = d.score;
+              if (aiScore > aiBest) { aiBest = aiScore; document.getElementById('ai-best').textContent=aiBest; }
+              aiScore = d.score;
+            } else {
+              aiScore = d.score;
+              aiMoves++;
+            }
+            document.getElementById('ai-score').textContent = aiScore;
+            document.getElementById('ai-moves').textContent = aiMoves;
+            document.getElementById('ai-time').textContent = ((Date.now()-(aiStartTime||Date.now()))/1000).toFixed(1)+'s';
+            renderAI();
+          }
+        };
+        aiWs.onclose = () => {};
+        aiWs.onerror = (err) => console.error('[AI WS]', err);
+      }
+
+      // ── Main game tick ──────────────────────────────────────────────────
+      function tick() {
+        stepHuman();
+        renderHuman();
+      }
+
+      // ── Public API ──────────────────────────────────────────────────────
+      window.humanStart = () => {
+        if (humanLoop) clearInterval(humanLoop);
+        initHuman();
+        renderHuman();
+        connectAI();
+        humanLoop = setInterval(tick, 150);
+        humanRunning = true;
+        document.getElementById('human-play-btn').disabled = true;
+        document.getElementById('human-stop-btn').disabled = false;
+      };
+
+      window.humanStop = () => {
+        if (humanLoop) clearInterval(humanLoop); humanLoop=null;
+        if (aiWs) { try{aiWs.send(JSON.stringify({type:'stop'}));aiWs.close();}catch(e){} aiWs=null; }
+        humanRunning = false;
+        document.getElementById('human-play-btn').disabled = false;
+        document.getElementById('human-stop-btn').disabled = true;
+        const ov = document.getElementById('human-overlay');
+        ov.innerHTML = `<div class="human-overlay-title">Stopped</div><div class="human-overlay-sub">Press <span class="kbd">Start</span> to play again</div>`;
+        ov.classList.remove('hidden');
+      };
+
+      window.humanPickAlgo = (id) => {
+        pickedAlgo = id;
+        // Update button styles
+        document.querySelectorAll('.algo-pick-btn').forEach(btn => {
+          const bid = btn.dataset.pick;
+          if (bid===id) {
+            btn.classList.add('selected');
+            btn.style.background = ACCENTS[bid];
+            btn.style.color = '#000';
+            btn.style.borderColor = ACCENTS[bid];
+          } else {
+            btn.classList.remove('selected');
+            btn.style.background = 'transparent';
+            btn.style.color = '';
+            btn.style.borderColor = '';
+          }
+        });
+        // Update AI panel accent
+        const aiColor = ACCENTS[id];
+        const aiCard = document.getElementById('ai-stat-card');
+        aiCard.style.setProperty('--ai-color', aiColor);
+        aiCard.style.borderTopColor = aiColor;
+        document.getElementById('ai-stat-label').style.color = aiColor;
+        document.getElementById('ai-score').style.color = aiColor;
+        const algoName = ALGOS.find(a=>a.id===id)?.badge || id;
+        document.getElementById('ai-stat-label').textContent = algoName+' AI';
+        document.getElementById('ai-canvas-label').textContent = 'AI ('+algoName+')';
+        // Restart AI if currently running
+        if (humanRunning) connectAI();
+      };
+
+      // ── Keyboard handling ───────────────────────────────────────────────
+      // Only capture arrow/WASD when the human section is the active slide
+      window.addEventListener('keydown', (e) => {
+        if (!humanRunning) return;
+        // Block page scroll when playing
+        const dirs = {ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0],
+                      w:[0,-1],s:[0,1],a:[-1,0],d:[1,0],
+                      W:[0,-1],S:[0,1],A:[-1,0],D:[1,0]};
+        const nd = dirs[e.key];
+        if (!nd) return;
+        e.stopPropagation(); // don't let it bubble to the page scroll handler
+        // Prevent reversing
+        if (nd[0]===-hDir[0]&&nd[1]===-hDir[1]) return;
+        hNextDir = nd;
+      }, true); // capture phase so it fires before the scroll handler
+
+      // Initial blank render
+      drawBoard(hCtx, [], null, '#00e5ff', false);
+      drawBoard(aCtx, [], null, ACCENTS['astar'], false);
+    })();
+
+
+    // ── Scrollytelling & Locked L-Shape Scroll ──────────────────────────
+    gsap.registerPlugin(ScrollTrigger);
+
+    const HERO_LINES = ['#hl-eyebrow', '#hl-1', '#hl-2', '#hl-3', '#hl-4'];
+    let revealIndex = 0;
+    let cardsRevealed = false;
+    let currentSlide = -1; // -1 is Hero, 0-6 are Algo sections
+    let scrollCooldown = false;
+
+    const progressBar = document.getElementById('hero-progress-bar');
+    const appContainer = document.getElementById('app-container');
+    const slider = document.getElementById('main-slider');
+    // cardsContainer already declared above
+
+    // Fade in first lines automatically
+    setTimeout(() => { revealNext(); setTimeout(() => revealNext(), 500); }, 300);
+
+    function revealNext() {
+      if (revealIndex === 0) {
+        gsap.to('#hero-video', { opacity: 0.55, duration: 1.5, ease: 'power2.out' });
+        gsap.to('#hero-overlay', { opacity: 1, duration: 1.5, ease: 'power2.out' });
+      }
+
+      if (revealIndex < HERO_LINES.length) {
+        const el = document.querySelector(HERO_LINES[revealIndex]);
+        gsap.to(el, { opacity: 1, y: 0, duration: 0.75, ease: 'power3.out' });
+        revealIndex++;
+        progressBar.style.width = (revealIndex / HERO_LINES.length) * 100 + '%';
+      }
+
+      if (revealIndex >= HERO_LINES.length && !cardsRevealed) {
+        revealCards();
+      }
+    }
+
+    function revealCards() {
+      if (cardsRevealed) return;
+      cardsRevealed = true;
+      gsap.to(cardsContainer, { opacity: 1, duration: 0.5 });
+      gsap.to('.hero-card', {
+        opacity: 1,
+        y: 0,
+        stagger: 0.1,
+        duration: 0.6,
+        ease: 'back.out(1.7)',
+        onComplete: () => cardsContainer.style.pointerEvents = 'all'
+      });
+    }
+
+    // Called by clicking a card
+    window.jumpToSection = (index) => {
+      cardsRevealed = true; // Ensure logic doesn't break if clicked early
+      currentSlide = index;
+      updateSlider();
+    };
+
+    function updateSlider() {
+      const sideNav = document.getElementById('side-nav');
+      const navItems = document.querySelectorAll('.side-nav-item');
+
+      if (currentSlide === -1) {
+        // Show Hero (Vertical Scroll Up)
+        appContainer.style.transform = `translateY(0)`;
+        sideNav.classList.remove('active');
+      } else {
+        // Show Sections (Vertical Scroll Down, then Horizontal)
+        appContainer.style.transform = `translateY(-100vh)`;
+        slider.style.transform = `translateX(-${currentSlide * 100}vw)`;
+        sideNav.classList.add('active');
+
+        // Update active state on nav items
+        navItems.forEach(item => {
+          if (parseInt(item.dataset.index) === currentSlide) {
+            item.classList.add('active');
+          } else {
+            item.classList.remove('active');
+          }
+        });
+      }
+    }
+
+    function handleScroll(direction) {
+      if (scrollCooldown) return;
+
+      if (currentSlide === -1) {
+        // In Hero Section
+        if (direction > 0) {
+          if (!cardsRevealed) {
+            triggerCooldown(550);
+            revealNext();
+          } else {
+            // Cards are shown, slide DOWN to first algo
+            triggerCooldown(1000);
+            currentSlide = 0;
+            updateSlider();
+          }
+        }
+      } else {
+        // In Slider Sections
+        triggerCooldown(1000);
+        if (direction > 0 && currentSlide < ALGOS.length - 1) {
+          currentSlide++; // Slide Left
+        } else if (direction < 0) {
+          currentSlide--; // Slide Right (or Up back to Hero)
+        }
+        updateSlider();
+      }
+    }
+
+    function triggerCooldown(ms) {
+      scrollCooldown = true;
+      setTimeout(() => { scrollCooldown = false; }, ms);
+    }
+
+    // Input Listeners
+    window.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      // Lowered threshold from 20 to 5 to fix trackpad locking
+      if (Math.abs(e.deltaY) > 5) handleScroll(e.deltaY);
+    }, { passive: false });
+
+    let _touchY = 0;
+    let _touchX = 0;
+    window.addEventListener('touchstart', (e) => {
+      _touchY = e.touches[0].clientY;
+      _touchX = e.touches[0].clientX;
+    }, { passive: true });
+
+    window.addEventListener('touchmove', (e) => {
+      e.preventDefault();
+      const deltaY = _touchY - e.touches[0].clientY;
+      const deltaX = _touchX - e.touches[0].clientX;
+
+      // Support both vertical and horizontal swiping on mobile
+      if (Math.abs(deltaY) > Math.abs(deltaX)) {
+        if (Math.abs(deltaY) > 30) handleScroll(deltaY);
+      } else {
+        if (Math.abs(deltaX) > 30) handleScroll(deltaX);
+      }
+    }, { passive: false });
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowRight' || e.key === ' ') {
+        e.preventDefault(); handleScroll(1);
+      } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+        e.preventDefault(); handleScroll(-1);
+      }
+    });
+
+  </script>
+</body>
+
+</html>

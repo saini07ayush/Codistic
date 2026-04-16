@@ -66,6 +66,18 @@ function extractSnippets(rawCode, length = "short") {
   // Strip docstrings first
   let code = stripDocstrings(rawCode);
 
+  if (length === "long") {
+    const lines = normalizeIndent(code.split("\n"));
+    const clean = lines
+      .join("\n")
+      .replace(/^\s*\/\/.*/gm, "")
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/^\s*#.*/gm, "")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
+    return [clean.split("\n").slice(0, 150).join("\n")];
+  }
+
   const lines = code.split("\n");
   const snippets = [];
   let i = 0;
@@ -137,31 +149,45 @@ export async function getSnippet(language = "python", length = "short") {
   const source = sources[Math.floor(Math.random() * sources.length)];
 
   try {
-    const files = await fetchFileList(source.owner, source.repo, source.path);
-
-    // Filter to only non-empty, meaningful code files
     const ext = { python: ".py", javascript: ".js", java: ".java", cpp: ".cpp", go: ".go", rust: ".rs" };
-    const codeFiles = files.filter(
-      (f) =>
-        f.type === "file" &&
-        f.name.endsWith(ext[lang] || ".py") &&
-        f.name !== "__init__.py" &&
-        f.name !== "mod.rs" &&
-        f.size > 500  // skip files smaller than 500 bytes (likely empty or near-empty)
-    );
+    const targetExt = ext[lang] || ".py";
+    let file = null;
+    let currentPath = source.path;
 
-    if (codeFiles.length === 0) throw new Error("No code files found");
+    for (let attempts = 0; attempts < 4; attempts++) {
+      const files = await fetchFileList(source.owner, source.repo, currentPath);
 
-    // Pick a random file
-    const file = codeFiles[Math.floor(Math.random() * codeFiles.length)];
+      const codeFiles = files.filter(
+        (f) =>
+          f.type === "file" &&
+          f.name.endsWith(targetExt) &&
+          f.name !== "__init__.py" &&
+          f.name !== "mod.rs" &&
+          f.size > 500
+      );
+
+      if (codeFiles.length > 0) {
+        file = codeFiles[Math.floor(Math.random() * codeFiles.length)];
+        break;
+      }
+
+      // If no valid files, try entering a random subdirectory
+      const dirs = files.filter((f) => f.type === "dir");
+      if (dirs.length === 0) break;
+      currentPath = dirs[Math.floor(Math.random() * dirs.length)].path;
+    }
+
+    if (!file) throw new Error("No code files found");
     const raw = await fetchFileContent(file.download_url);
 
     const snippets = extractSnippets(raw, length);
 
     if (snippets.length === 0) {
-      // fallback: return first 20 lines of the file
+      const fallbackLengths = { short: 15, medium: 30, long: 150 };
+      const maxLines = fallbackLengths[length] || 15;
+      // fallback: return lines of the file
       return {
-        code: raw.split("\n").slice(0, length === "short" ? 15 : 30).join("\n").trim(),
+        code: raw.split("\n").slice(0, maxLines).join("\n").trim(),
         source: `github.com/${source.owner}/${source.repo}`,
         file: file.name,
         language: lang,
