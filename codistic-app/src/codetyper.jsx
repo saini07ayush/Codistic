@@ -6,6 +6,7 @@ import { getSnippet } from "./services/githubSnippets";
 import { THEMES, THEME_ACCENTS } from "./themes";
 import AuthPage from "./AuthPage";
 import ProfilePage from "./ProfilePage";
+import DynamicBackground from "./DynamicBackground";
 
 const LANGUAGES = ["python", "javascript", "java", "cpp", "go", "rust"];
 const LENGTHS = ["short", "medium", "long"];
@@ -230,13 +231,10 @@ export default function CodeTyper() {
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         body { background: ${t.bg}; color: ${t.text}; font-family: 'DM Sans', sans-serif; min-height: 100vh; }
         .app { min-height: 100vh; display: flex; flex-direction: column; background: ${t.bg}; position: relative; }
-        .app::before {
-          content: ''; position: fixed; inset: 0;
-          background-image: linear-gradient(${t.gridLine} 1px, transparent 1px), linear-gradient(90deg, ${t.gridLine} 1px, transparent 1px);
-          background-size: 48px 48px; pointer-events: none; z-index: 0;
-        }
+        .app::before { display: none; }
         .glow-orb { position: fixed; width: 600px; height: 600px; border-radius: 50%; filter: blur(120px); opacity: 0.06; pointer-events: none; z-index: 0; background: ${accent}; top: -200px; left: 20%; transition: background 0.6s; }
-        nav { position: relative; z-index: 10; display: flex; align-items: center; justify-content: space-between; padding: 0 48px; height: 64px; border-bottom: 1px solid ${t.border}; backdrop-filter: blur(12px); background: ${t.navBg}; }
+        nav { position: relative; z-index: 10; display: flex; align-items: center; justify-content: center; height: 64px; border-bottom: 1px solid ${t.border}; backdrop-filter: blur(12px); background: ${t.navBg}; }
+        .nav-inner { width: 100%; max-width: 1080px; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; }
         .nav-logo { display: flex; align-items: center; gap: 8px; font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; letter-spacing: -0.5px; color: ${t.text}; }
         .nav-logo span { color: ${accent}; }
         .nav-center { display: flex; align-items: center; gap: 16px; }
@@ -258,9 +256,9 @@ export default function CodeTyper() {
         .ctrl-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
         .reload-btn { padding: 8px 12px; border-radius: 8px; border: 1px solid ${t.border}; background: transparent; color: ${t.textMuted}; font-family: 'JetBrains Mono', monospace; font-size: 12px; cursor: pointer; transition: all 0.15s; }
         .reload-btn:hover { color: ${t.text}; border-color: ${t.text}; }
-        .progress-bar-wrap { width: 100%; max-width: 860px; height: 2px; background: ${t.borderSubtle}; border-radius: 2px; overflow: hidden; }
+        .progress-bar-wrap { width: 100%; max-width: 1080px; height: 2px; background: ${t.borderSubtle}; border-radius: 2px; overflow: hidden; }
         .progress-bar-fill { height: 100%; border-radius: 2px; transition: width 0.1s linear; }
-        .editor-wrap { width: 100%; max-width: 860px; border-radius: 16px; overflow: hidden; border: 1px solid ${t.border}; background: ${t.surface}; box-shadow: 0 24px 80px rgba(0,0,0,0.3); }
+        .editor-wrap { width: 100%; max-width: 1080px; border-radius: 16px; overflow: hidden; border: 1px solid ${t.border}; background: ${t.surface}; box-shadow: 0 24px 80px rgba(0,0,0,0.3); }
         .editor-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; background: ${t.surfaceAlt}; border-bottom: 1px solid ${t.border}; }
         .editor-dots { display: flex; gap: 6px; }
         .editor-dot { width: 11px; height: 11px; border-radius: 50%; }
@@ -280,7 +278,7 @@ export default function CodeTyper() {
         @keyframes spin { to { transform: rotate(360deg); } }
         .loading-text { font-family: 'JetBrains Mono', monospace; font-size: 12px; }
         .hint { font-size: 12px; color: ${t.textDim}; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.3px; text-align: center; }
-        .stats-bar { display: flex; gap: 8px; width: 100%; max-width: 860px; }
+        .stats-bar { display: flex; gap: 8px; width: 100%; max-width: 1080px; }
         .stat-card { flex: 1; padding: 16px 20px; background: ${t.surface}; border: 1px solid ${t.border}; border-radius: 10px; display: flex; flex-direction: column; gap: 4px; }
         .stat-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: ${t.textMuted}; font-weight: 500; }
         .stat-value { font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 500; color: ${t.text}; line-height: 1; }
@@ -309,10 +307,12 @@ export default function CodeTyper() {
       `}</style>
 
       <div className="app">
+        <DynamicBackground wpm={finished ? 0 : wpm} accent={accent} />
         <div className="glow-orb" />
 
         <nav>
-          <div className="nav-logo">
+          <div className="nav-inner">
+            <div className="nav-logo">
             <img src="/logo.jpeg" alt="Codistic Logo" style={{ width: 26, height: 26, borderRadius: 4 }} />
             <div>codi<span>stic</span></div>
           </div>
@@ -387,6 +387,7 @@ export default function CodeTyper() {
             ) : (
               <button className="btn-nav-accent" onClick={() => setShowAuth(true)}>Sign In</button>
             )}
+            </div>
           </div>
         </nav>
 
@@ -404,7 +405,7 @@ export default function CodeTyper() {
             <div className="ctrl-group">
               {LENGTHS.map((l) => (
                 <button key={l} className={`ctrl-btn ${length === l ? "active" : ""}`} onClick={() => setLength(l)}>
-                  {l === "short" ? "~10 lines" : l === "medium" ? "~25 lines" : "full code (~100+ lines)"}
+                  {l === "short" ? "short" : l === "medium" ? "warmup" : "full"}
                 </button>
               ))}
             </div>
