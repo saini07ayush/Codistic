@@ -380,7 +380,7 @@ export default function ProfilePage({ user, theme, accent, onBack }) {
             <img src="/logo.jpeg" alt="Codistic Logo" style={{ width: 34, height: 34, borderRadius: 6 }} />
             <div className="dash-logo-block">
               <div className="dash-title">codi<span style={{ color: accent }}>stic</span></div>
-              <div className="dash-subtitle">Profile Statistics</div>
+              <div className="dash-subtitle">Statistics</div>
             </div>
           </div>
           
