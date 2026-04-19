@@ -4,6 +4,7 @@ import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "./firebase";
 import { getSnippet } from "./services/githubSnippets";
 import { THEMES, THEME_ACCENTS } from "./themes";
+import AuthPage from "./AuthPage";
 import ProfilePage from "./ProfilePage";
 import SettingsPage from "./SettingsPage";
 import DynamicBackground from "./DynamicBackground";
@@ -406,6 +407,13 @@ export default function CodeTyper() {
         .btn-secondary:hover { background: ${t.surfaceAlt}; color: ${t.text}; }
         .custom-input { width: 100%; padding: 16px; border-radius: 12px; border: 1px solid ${t.border}; background: ${t.surfaceAlt}; color: ${t.text}; font-family: ${fontFamily}; font-size: ${fontSize}px; outline: none; transition: border-color 0.15s; }
         .custom-input:focus { border-color: ${accent}; }
+        footer { position: relative; z-index: 1; border-top: 1px solid ${t.border}; padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; background: ${t.navBg}; backdrop-filter: blur(12px); }
+        .footer-left { display: flex; align-items: center; gap: 8px; font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; color: ${t.textDim}; }
+        .footer-left span { color: ${accent}; }
+        .footer-links { display: flex; gap: 20px; }
+        .footer-link { background: none; border: none; color: ${t.textMuted}; font-family: 'DM Sans', sans-serif; font-size: 12px; cursor: pointer; transition: color 0.15s; }
+        .footer-link:hover { color: ${t.text}; }
+        .footer-copy { font-size: 11px; color: ${t.textDim}; font-family: 'JetBrains Mono', monospace; }
       `}</style>
 
       <div className="app">
@@ -645,6 +653,20 @@ export default function CodeTyper() {
             </div>
           </div>
         )}
+
+        <footer>
+          <div className="footer-left">
+            <img src="/logo.jpeg" alt="Logo" style={{ width: 18, height: 18, borderRadius: 3 }} />
+            codi<span>stic</span>
+          </div>
+          <div className="footer-links">
+            {user && <button className="footer-link" onClick={() => setShowProfile(true)}>Profile</button>}
+            {user && <button className="footer-link" onClick={() => setShowSettings(true)}>Settings</button>}
+            <button className="footer-link" onClick={() => window.open('mailto:ayushforstuff@gmail.com', '_blank')}>Contact Us</button>
+            <button className="footer-link" onClick={() => window.open('https://github.com/saini07ayush/Codistic', '_blank')}>GitHub</button>
+          </div>
+          <div className="footer-copy">© {new Date().getFullYear()} Codistic</div>
+        </footer>
       </div>
     </>
   );
