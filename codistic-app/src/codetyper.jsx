@@ -4,8 +4,8 @@ import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "./firebase";
 import { getSnippet } from "./services/githubSnippets";
 import { THEMES, THEME_ACCENTS } from "./themes";
-import AuthPage from "./AuthPage";
 import ProfilePage from "./ProfilePage";
+import SettingsPage from "./SettingsPage";
 import DynamicBackground from "./DynamicBackground";
 
 const LANGUAGES = ["python", "javascript", "java", "cpp", "go", "rust"];
@@ -35,6 +35,12 @@ export default function CodeTyper() {
   const [error, setError] = useState(null);
   const [cursorPos, setCursorPos] = useState(0);
   const [elapsed, setElapsed] = useState(0);
+  const [fontFamily, setFontFamily] = useState(() => {
+    return localStorage.getItem("codistic-font") || "'JetBrains Mono', monospace";
+  });
+  const [fontSize, setFontSize] = useState(() => {
+    return parseInt(localStorage.getItem("codistic-fontsize")) || 14;
+  });
   const [themeName, setThemeName] = useState(() => {
     return localStorage.getItem("codistic-theme") || "dark";
   });
@@ -44,6 +50,9 @@ export default function CodeTyper() {
   const [authChecked, setAuthChecked] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [showCustomModal, setShowCustomModal] = useState(false);
+  const [customText, setCustomText] = useState("");
 
   const timerRef = useRef(null);
   const theme = THEMES[themeName];
@@ -52,6 +61,12 @@ export default function CodeTyper() {
   useEffect(() => {
     localStorage.setItem("codistic-theme", themeName);
   }, [themeName]);
+  useEffect(() => {
+    localStorage.setItem("codistic-font", fontFamily);
+  }, [fontFamily]);
+  useEffect(() => {
+    localStorage.setItem("codistic-fontsize", fontSize);
+  }, [fontSize]);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {
@@ -65,6 +80,10 @@ export default function CodeTyper() {
   }, []);
 
   const loadSnippet = useCallback(async () => {
+    if (length === "custom") {
+      return; // Do not overwrite user's custom snippet on auto-reload
+    }
+
     setLoading(true);
     setError(null);
     setTyped("");
@@ -96,6 +115,63 @@ export default function CodeTyper() {
     setLoading(false);
   }, [language, length]);
 
+  const handleStartCustom = useCallback(async () => {
+    let input = customText.trim();
+    if (!input) return;
+
+    if (!/^https?:\/\//.test(input)) {
+        setError("Please enter a valid URL (http:// or https://).");
+        setShowCustomModal(false);
+        return;
+    }
+
+    let codeToType = "";
+    let fileName = "custom snippet";
+    let sourceName = "user defined";
+
+    try {
+        setLoading(true);
+        setShowCustomModal(false);
+        let fetchUrl = input;
+        
+        // Auto convert github blob URLs to raw URLs
+        if (input.includes('github.com') && input.includes('/blob/')) {
+            fetchUrl = input.replace('github.com', 'raw.githubusercontent.com').replace('/blob/', '/');
+        }
+
+        const res = await fetch(fetchUrl);
+        if (!res.ok) throw new Error("Failed to fetch from URL");
+        codeToType = await res.text();
+        codeToType = codeToType.split('\n').slice(0, 150).join('\n').trim(); // Limit size
+        
+        fileName = fetchUrl.split('/').pop() || "fetched_snippet";
+        sourceName = new URL(fetchUrl).hostname;
+    } catch (e) {
+        setLoading(false);
+        setError("Failed to fetch from the provided URL. Make sure it's a raw file link (CORS permitted).");
+        return;
+    }
+
+    setSnippet({
+       code: codeToType,
+       file: fileName,
+       source: sourceName
+    });
+    setLength("custom");
+    setLoading(false);
+    setError(null);
+    setTyped("");
+    setStarted(false);
+    setFinished(false);
+    setWpm(0);
+    setAccuracy(100);
+    setElapsed(0);
+    setCursorPos(0);
+    clearInterval(timerRef.current);
+    setShowCustomModal(false);
+    setCustomText("");
+  }, [customText]);
+
   useEffect(() => { loadSnippet(); }, [loadSnippet]);
 
   useEffect(() => {
@@ -122,7 +198,7 @@ export default function CodeTyper() {
   }, [finished]);
 
   const handleKeyDown = useCallback((e) => {
-    if (finished || !snippet || showAuth || showProfile || showThemePicker || paused) return;
+    if (finished || !snippet || showAuth || showProfile || showThemePicker || showCustomModal || paused) return;
     if (e.key === "Tab") {
       e.preventDefault();
       if (!started) { setStarted(true); setStartTime(Date.now()); }
@@ -165,7 +241,7 @@ export default function CodeTyper() {
         setWpm(Math.round(words / timeTaken));
       }
     }
-  }, [typed, started, finished, snippet, startTime, showAuth, showProfile, showThemePicker]);
+  }, [typed, started, finished, snippet, startTime, showAuth, showProfile, showThemePicker, showCustomModal, paused]);
 
   useEffect(() => {
     window.addEventListener("keydown", handleKeyDown);
@@ -220,25 +296,48 @@ export default function CodeTyper() {
 
   if (!authChecked) return null;
   if (showAuth) return <AuthPage theme={t} accent={accent} onBack={() => setShowAuth(false)} onSuccess={() => setShowAuth(false)} />;
+  
+  if (showSettings && user) return (
+    <SettingsPage 
+      user={user} 
+      theme={t} 
+      accent={accent} 
+      onBack={() => setShowSettings(false)} 
+      fontFamily={fontFamily}
+      setFontFamily={setFontFamily}
+      fontSize={fontSize}
+      setFontSize={setFontSize}
+      themeName={themeName}
+      setThemeName={setThemeName}
+    />
+  );
+  
   if (showProfile && user) return (
-    <ProfilePage user={user} theme={t} accent={accent} onBack={() => setShowProfile(false)} />
+    <ProfilePage 
+      user={user} 
+      theme={t} 
+      accent={accent} 
+      onBack={() => setShowProfile(false)} 
+      fontFamily={fontFamily}
+      onFontChange={setFontFamily}
+    />
   );
 
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500&family=Syne:wght@700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500&family=Syne:wght@700;800&family=Fira+Code:wght@300;400;500&family=Source+Code+Pro:wght@300;400;500&family=Inconsolata:wght@300;400;500&family=Space+Mono&family=Ubuntu+Mono&display=swap');
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         body { background: ${t.bg}; color: ${t.text}; font-family: 'DM Sans', sans-serif; min-height: 100vh; }
         .app { min-height: 100vh; display: flex; flex-direction: column; background: ${t.bg}; position: relative; }
         .app::before { display: none; }
         .glow-orb { position: fixed; width: 600px; height: 600px; border-radius: 50%; filter: blur(120px); opacity: 0.06; pointer-events: none; z-index: 0; background: ${accent}; top: -200px; left: 20%; transition: background 0.6s; }
         nav { position: relative; z-index: 10; display: flex; align-items: center; justify-content: center; height: 64px; border-bottom: 1px solid ${t.border}; backdrop-filter: blur(12px); background: ${t.navBg}; }
-        .nav-inner { width: 100%; max-width: 1080px; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; }
+        .nav-inner { width: 100%; display: grid; grid-template-columns: 1fr auto 1fr; padding: 0 40px; align-items: center; }
         .nav-logo { display: flex; align-items: center; gap: 8px; font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; letter-spacing: -0.5px; color: ${t.text}; }
         .nav-logo span { color: ${accent}; }
-        .nav-center { display: flex; align-items: center; gap: 16px; }
-        .nav-right { display: flex; align-items: center; gap: 10px; }
+        .nav-center { display: flex; align-items: center; gap: 16px; justify-self: center; }
+        .nav-right { display: flex; align-items: center; gap: 10px; justify-self: end; }
         .nav-stat { display: flex; flex-direction: column; align-items: flex-end; }
         .nav-stat-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: ${t.textMuted}; font-weight: 500; }
         .nav-stat-value { font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 500; color: ${t.text}; }
@@ -256,6 +355,7 @@ export default function CodeTyper() {
         .ctrl-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
         .reload-btn { padding: 8px 12px; border-radius: 8px; border: 1px solid ${t.border}; background: transparent; color: ${t.textMuted}; font-family: 'JetBrains Mono', monospace; font-size: 12px; cursor: pointer; transition: all 0.15s; }
         .reload-btn:hover { color: ${t.text}; border-color: ${t.text}; }
+        .reload-btn.active { color: ${t.text}; border-color: ${accent}; background: ${t.surfaceAlt}; }
         .progress-bar-wrap { width: 100%; max-width: 1080px; height: 2px; background: ${t.borderSubtle}; border-radius: 2px; overflow: hidden; }
         .progress-bar-fill { height: 100%; border-radius: 2px; transition: width 0.1s linear; }
         .editor-wrap { width: 100%; max-width: 1080px; border-radius: 16px; overflow: hidden; border: 1px solid ${t.border}; background: ${t.surface}; box-shadow: 0 24px 80px rgba(0,0,0,0.3); }
@@ -266,8 +366,8 @@ export default function CodeTyper() {
         .editor-source { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: ${t.textDim}; }
         .editor-body { padding: 28px 32px; min-height: 280px; display: flex; align-items: flex-start; justify-content: flex-start; cursor: text; overflow-x: auto; width: 100%; }
         .line-numbers { display: flex; flex-direction: column; align-items: flex-end; margin-right: 24px; user-select: none; flex-shrink: 0; }
-        .line-num { font-family: 'JetBrains Mono', monospace; font-size: 14px; line-height: 1.7; color: ${t.textDim}; min-width: 20px; text-align: right; }
-        .code-display { font-family: 'JetBrains Mono', monospace; font-size: 14px; line-height: 1.7; white-space: pre; flex: 1; min-width: 0; width: 100%; text-align: left; outline: none; tab-size: 4; display: block; }
+        .line-num { font-family: ${fontFamily}; font-size: ${fontSize}px; line-height: 1.7; color: ${t.textDim}; min-width: 20px; text-align: right; }
+        .code-display { font-family: ${fontFamily}; font-size: ${fontSize}px; line-height: 1.7; white-space: pre; flex: 1; min-width: 0; width: 100%; text-align: left; outline: none; tab-size: 4; display: block; }
         .char-untyped { color: ${t.textDim}; }
         .char-correct { color: ${t.correct}; }
         .char-wrong { color: ${t.wrong}; background: ${t.wrongBg}; border-radius: 2px; }
@@ -304,6 +404,8 @@ export default function CodeTyper() {
         .btn-primary:hover { opacity: 0.85; }
         .btn-secondary { flex: 1; padding: 12px 20px; border-radius: 10px; border: 1px solid ${t.border}; background: transparent; color: ${t.textMuted}; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.15s; }
         .btn-secondary:hover { background: ${t.surfaceAlt}; color: ${t.text}; }
+        .custom-input { width: 100%; padding: 16px; border-radius: 12px; border: 1px solid ${t.border}; background: ${t.surfaceAlt}; color: ${t.text}; font-family: ${fontFamily}; font-size: ${fontSize}px; outline: none; transition: border-color 0.15s; }
+        .custom-input:focus { border-color: ${accent}; }
       `}</style>
 
       <div className="app">
@@ -331,7 +433,6 @@ export default function CodeTyper() {
             </div>
           </div>
           <div className="nav-right">
-            {!user && (
               <div className="theme-picker-wrap">
                 <button className="btn-nav" onClick={() => setShowThemePicker((p) => !p)}>Theme</button>
                 {showThemePicker && (
@@ -349,34 +450,27 @@ export default function CodeTyper() {
                   </div>
                 )}
               </div>
-            )}
+
             {user ? (
               <div className="theme-picker-wrap">
-                <button className="btn-nav" style={{ display: 'flex', alignItems: 'center', gap: 6 }} onClick={() => setShowUserMenu((p) => !p)}>
+                <button className="btn-nav" style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 12px' }} onClick={() => setShowUserMenu((p) => !p)}>
+                  {user.photoURL && (
+                     <img src={user.photoURL} alt="avatar" style={{width: 22, height: 22, borderRadius: '50%', objectFit: 'cover', border: `1px solid ${t.border}`}} />
+                  )}
                   Profile <span style={{ fontSize: 9, opacity: 0.7 }}>▼</span>
                 </button>
                 {showUserMenu && (
-                  <div className="theme-picker-dropdown" style={{ minWidth: 180, right: 0 }}>
+                  <div className="theme-picker-dropdown" style={{ minWidth: 160, right: 0 }}>
                     <div style={{ padding: '8px 12px', fontSize: 12, color: t.text, fontWeight: 500 }}>
-                      {user.email?.split('@')[0]}
+                      {user.displayName || user.email?.split('@')[0]}
                     </div>
                     <div style={{ height: 1, background: t.border, margin: '4px 0' }} />
                     <button className="theme-option" onClick={() => { setShowProfile(true); setShowUserMenu(false); }}>
                       View Stats
                     </button>
-                    <div style={{ padding: '12px 12px 4px', fontSize: 10, textTransform: 'uppercase', color: t.textMuted }}>
-                      Themes
-                    </div>
-                    {Object.entries(THEMES).map(([key, val]) => (
-                      <button
-                        key={key}
-                        className={`theme-option ${themeName === key ? "active" : ""}`}
-                        onClick={() => { setThemeName(key); setShowUserMenu(false); }}
-                      >
-                        <div className="theme-swatch" style={{ background: THEME_ACCENTS[key] }} />
-                        {val.name}
-                      </button>
-                    ))}
+                    <button className="theme-option" onClick={() => { setShowSettings(true); setShowUserMenu(false); }}>
+                      ⚙️ Settings
+                    </button>
                     <div style={{ height: 1, background: t.border, margin: '4px 0' }} />
                     <button className="theme-option" style={{ color: t.wrong }} onClick={() => { signOut(auth); setShowUserMenu(false); }}>
                       Sign Out
@@ -410,7 +504,8 @@ export default function CodeTyper() {
               ))}
             </div>
             <div className="ctrl-divider" />
-            <button className="reload-btn" onClick={loadSnippet}>↺ new</button>
+            <button className="reload-btn" onClick={() => length === 'custom' ? setLength('short') : loadSnippet()}>↺ new</button>
+            <button className={`reload-btn ${length === 'custom' ? 'active' : ''}`} onClick={() => setShowCustomModal(true)}>✎ custom</button>
             {started && !finished && (
               <button className="reload-btn" onClick={() => setPaused(p => !p)}>
                 {paused ? "▶ resume" : "⏸ pause"}
@@ -521,6 +616,31 @@ export default function CodeTyper() {
                 <button className="btn-secondary" onClick={() => { setTyped(""); setStarted(false); setFinished(false); setWpm(0); setAccuracy(100); setElapsed(0); setCursorPos(0); }}>
                   Retry
                 </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showCustomModal && (
+          <div className="results-overlay">
+            <div className="results-card">
+              <div>
+                <div className="results-title">Load from URL</div>
+                <p style={{ color: t.textMuted, fontSize: 14, marginTop: 6, fontFamily: "'DM Sans'" }}>
+                  Paste a valid URL to any raw file or Github code link below.
+                </p>
+              </div>
+              <input
+                type="text"
+                className="custom-input"
+                placeholder="https://github.com/user/repo/blob/main/file.js"
+                value={customText}
+                onChange={(e) => setCustomText(e.target.value)}
+                autoFocus
+              />
+              <div className="results-actions">
+                <button className="btn-secondary" onClick={() => setShowCustomModal(false)}>Cancel</button>
+                <button className="btn-primary" onClick={handleStartCustom}>Start Typing</button>
               </div>
             </div>
           </div>

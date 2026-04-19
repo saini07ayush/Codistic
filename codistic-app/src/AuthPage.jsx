@@ -3,13 +3,16 @@ import {
   signInWithPopup,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  updateProfile,
 } from "firebase/auth";
-import { auth, googleProvider } from "./firebase";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { auth, googleProvider, storage } from "./firebase";
 
 export default function AuthPage({ theme, accent, onSuccess }) {
   const [mode, setMode] = useState("login"); // login | signup
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [avatarFile, setAvatarFile] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -33,7 +36,18 @@ export default function AuthPage({ theme, accent, onSuccess }) {
     setError("");
     try {
       if (mode === "signup") {
-        await createUserWithEmailAndPassword(auth, email, password);
+        const userCred = await createUserWithEmailAndPassword(auth, email, password);
+        if (avatarFile) {
+          try {
+            const fileRef = ref(storage, `avatars/${userCred.user.uid}`);
+            await uploadBytes(fileRef, avatarFile);
+            const photoURL = await getDownloadURL(fileRef);
+            await updateProfile(userCred.user, { photoURL });
+          } catch (storageErr) {
+            console.error("Avatar upload failed:", storageErr);
+            // Optionally display an error, but the account is successfully created.
+          }
+        }
       } else {
         await signInWithEmailAndPassword(auth, email, password);
       }
@@ -230,6 +244,25 @@ export default function AuthPage({ theme, accent, onSuccess }) {
           <div className="auth-divider">or</div>
 
           <div className="auth-inputs">
+            {mode === "signup" && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <span style={{ fontSize: 11, color: t.textMuted, marginLeft: 2, fontFamily: "'JetBrains Mono'" }}>Profile Picture (Optional)</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setAvatarFile(e.target.files[0])}
+                  style={{
+                    padding: '8px 12px',
+                    borderRadius: 10,
+                    border: `1px dashed ${t.border}`,
+                    color: t.textMuted,
+                    fontSize: 12,
+                    fontFamily: "'DM Sans'",
+                    cursor: 'pointer'
+                  }}
+                />
+              </div>
+            )}
             <input
               className="auth-input"
               type="email"
