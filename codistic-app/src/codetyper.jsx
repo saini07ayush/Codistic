@@ -82,7 +82,7 @@ export default function CodeTyper() {
       document.title = "Codistic / Sign In";
       window.history.pushState({}, '', '/login');
     } else {
-      document.title = "Codistic — Code Typing Trainer";
+      document.title = "Codistic - Code Typing Trainer";
       window.history.pushState({}, '', '/');
     }
   }, [showSettings, showProfile, showAuth]);
@@ -468,15 +468,15 @@ export default function CodeTyper() {
           <div className="nav-center">
             <div className="nav-stat">
               <span className="nav-stat-label">WPM</span>
-              <span className="nav-stat-value" style={{ color: started ? accent : t.textMuted }}>{started ? wpm || "—" : "—"}</span>
+              <span className="nav-stat-value" style={{ color: started ? accent : t.textMuted }}>{started ? wpm || "-" : "-"}</span>
             </div>
             <div className="nav-stat">
               <span className="nav-stat-label">Accuracy</span>
-              <span className="nav-stat-value">{started ? `${accuracy}%` : "—"}</span>
+              <span className="nav-stat-value">{started ? `${accuracy}%` : "-"}</span>
             </div>
             <div className="nav-stat">
               <span className="nav-stat-label">Time</span>
-              <span className="nav-stat-value">{started ? `${elapsed}s` : "—"}</span>
+              <span className="nav-stat-value">{started ? `${elapsed}s` : "-"}</span>
             </div>
           </div>
           <div className="nav-right">
@@ -622,7 +622,7 @@ export default function CodeTyper() {
             ))}
           </div>
 
-          {!started && !loading && <p className="hint">start typing to begin — tab for indentation</p>}
+          {!started && !loading && <p className="hint">start typing to begin · tab for indentation</p>}
         </main>
 
         {finished && (
@@ -699,7 +699,7 @@ export default function CodeTyper() {
         <footer>
           <div className="footer-left">
             <img src="/logo.jpeg" alt="Logo" style={{ width: 18, height: 18, borderRadius: 3 }} />
-            codi<span>stic</span>
+            <span>codi<span>stic</span></span>
           </div>
           <div className="footer-links">
             {user && <button className="footer-link" onClick={() => setShowProfile(true)}>Profile</button>}
@@ -707,7 +707,7 @@ export default function CodeTyper() {
             <button className="footer-link" onClick={() => window.open('mailto:ayushforstuff@gmail.com', '_blank')}>Contact Us</button>
             <button className="footer-link" onClick={() => window.open('https://github.com/saini07ayush/Codistic', '_blank')}>GitHub</button>
           </div>
-          <div className="footer-copy">© {new Date().getFullYear()} Codistic</div>
+          <div className="footer-copy">{new Date().getFullYear()} Codistic</div>
         </footer>
       </div>
     </>

@@ -536,7 +536,7 @@ export default function SettingsPage({
                       <img src="/logo.jpeg" alt="Logo" style={{ width: 56, height: 56, borderRadius: 12, border: `1px solid ${t.border}` }} />
                       <div>
                         <div className="about-heading">codi<span style={{ color: accent }}>stic</span></div>
-                        <div style={{ fontSize: 13, color: t.textMuted, fontFamily: "'JetBrains Mono', monospace", marginTop: 4 }}>v1.2.0 — The Code Typing Engine</div>
+                        <div style={{ fontSize: 13, color: t.textMuted, fontFamily: "'JetBrains Mono', monospace", marginTop: 4 }}>v1.2.0 · The Code Typing Engine</div>
                       </div>
                     </div>
                     <div style={{ marginTop: 12 }}>
@@ -555,16 +555,16 @@ export default function SettingsPage({
                       It started with a frustration every developer knows but rarely talks about.
                     </p>
                     <p className="about-text">
-                      I was in the middle of a coding sprint—deep in a React component, wiring up state, writing arrow functions, 
-                      destructuring props—and I realized something: <strong style={{ color: t.text }}>my fingers were the bottleneck, not my brain.</strong> I knew 
+                      I was in the middle of a coding sprint, deep in a React component, wiring up state, writing arrow functions, 
+                      destructuring props, and I realized something: <strong style={{ color: t.text }}>my fingers were the bottleneck, not my brain.</strong> I knew 
                       exactly what I wanted to write. The logic was clear in my head. But my hands kept stumbling over the same characters: 
                       <span style={{ fontFamily: "'JetBrains Mono', monospace", color: accent, padding: '2px 6px', background: `${accent}12`, borderRadius: 4 }}> {'{'} {'}'} ( ) =&gt; [ ] === &amp;&amp; || </span>
                     </p>
                     <p className="about-text">
-                      So I did what any developer would do—I went looking for a typing trainer. I found dozens. MonkeyType, TypeRacer, Keybr, 
+                      So I did what any developer would do: I went looking for a typing trainer. I found dozens. MonkeyType, TypeRacer, Keybr, 
                       10FastFingers. They were great at one thing: <em>English prose</em>. I could type "the quick brown fox" at 90 WPM all day long. 
                       But the moment I sat down to actually code? My speed dropped to half. The symbols, the indentation, the brackets nested three levels 
-                      deep—none of that was being practiced. <strong style={{ color: t.text }}>Not a single typing trainer was designed for the way developers actually type.</strong>
+                      deep, none of that was being practiced. <strong style={{ color: t.text }}>Not a single typing trainer was designed for the way developers actually type.</strong>
                     </p>
                     <p className="about-text">
                       That's when the idea hit me. What if there was a typing trainer that didn't use random sentences or dictionary words, but used 
@@ -608,7 +608,7 @@ export default function SettingsPage({
                       ))}
                     </div>
                     <p className="about-text">
-                      When you type code, you're not just pressing letter keys—you're constantly reaching for Shift, navigating brackets, managing whitespace, 
+                      When you type code, you're not just pressing letter keys. You're constantly reaching for Shift, navigating brackets, managing whitespace, 
                       and mentally parsing structure. <strong style={{ color: t.text }}>Those micro-movements add up.</strong> A developer who codes 8 hours a day can 
                       spend hundreds of hours per year on keystrokes that no traditional typing test ever practices.
                     </p>
@@ -621,13 +621,13 @@ export default function SettingsPage({
                   <div className="about-section" style={{ gap: 14 }}>
                     <p className="about-text">
                       Codistic pulls real, production-quality code snippets directly from <strong style={{ color: t.text }}>top-tier open-source repositories on GitHub</strong>. 
-                      Every snippet you type is actual code that someone wrote to solve a real problem—not a contrived exercise or a random string of characters.
+                      Every snippet you type is actual code that someone wrote to solve a real problem, not a contrived exercise or a random string of characters.
                     </p>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10, margin: '4px 0' }}>
                       {[
                         { step: "01", title: "Choose Your Language", desc: "Pick from Python, JavaScript, Java, C++, Go, or Rust. Each language has its own unique rhythm of symbols and patterns." },
                         { step: "02", title: "Select Difficulty", desc: "Short snippets for quick warm-ups, medium for focused practice, or full-length functions for deep sessions." },
-                        { step: "03", title: "Type Real Code", desc: "Every character matters—semicolons, arrow functions, template literals, ternary operators. This is what real coding feels like." },
+                        { step: "03", title: "Type Real Code", desc: "Every character matters: semicolons, arrow functions, template literals, ternary operators. This is what real coding feels like." },
                         { step: "04", title: "Track Your Growth", desc: "Watch your WPM climb, your accuracy tighten, and your streak grow. All synced to your cloud account." },
                       ].map((s, i) => (
                         <div key={i} style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
@@ -645,7 +645,7 @@ export default function SettingsPage({
                       ))}
                     </div>
                     <p className="about-text">
-                      You can also load <strong style={{ color: t.text }}>any public code file from the web</strong> using the Custom URL loader—paste a GitHub link or any raw file URL 
+                      You can also load <strong style={{ color: t.text }}>any public code file from the web</strong> using the Custom URL loader. Paste a GitHub link or any raw file URL 
                       and start typing it immediately. Practice your own codebase, your team's style guide, or that open-source library you've been wanting to learn.
                     </p>
                   </div>
@@ -656,12 +656,12 @@ export default function SettingsPage({
                   <div className="settings-card-title">What Sets Codistic Apart</div>
                   <div className="about-section" style={{ gap: 14 }}>
                     {[
-                      { icon: "⌨️", title: "Symbol-First Training", desc: "Unlike every other typing trainer, Codistic was built from day one around the characters developers actually use. Curly braces, arrow functions, semicolons, ternary operators—the keys that slow you down the most are the ones you practice the most." },
+                      { icon: "⌨️", title: "Symbol-First Training", desc: "Unlike every other typing trainer, Codistic was built from day one around the characters developers actually use. Curly braces, arrow functions, semicolons, ternary operators: the keys that slow you down the most are the ones you practice the most." },
                       { icon: "🔄", title: "Fresh Snippets, Always", desc: "Snippets are pulled live from GitHub's vast ecosystem of open-source projects. You'll never run out of material, and every session exposes you to new coding patterns and styles." },
-                      { icon: "🎨", title: "11 Premium Themes", desc: "From the deep blacks of Monochrome to the warm tones of Gruvbox, from the electric glow of Dracula to the clean minimalism of Paper—every theme is hand-tuned for extended coding sessions. Your eyes deserve better than a white page with black text." },
-                      { icon: "📊", title: "Real-Time Performance Analytics", desc: "WPM, accuracy, time elapsed, and progress—all tracked live as you type. Your performance data is visualized in beautiful charts, heatmaps, and streak trackers on your personal statistics dashboard." },
+                      { icon: "🎨", title: "11 Premium Themes", desc: "From the deep blacks of Monochrome to the warm tones of Gruvbox, from the electric glow of Dracula to the clean minimalism of Paper. Every theme is hand-tuned for extended coding sessions. Your eyes deserve better than a white page with black text." },
+                      { icon: "📊", title: "Real-Time Performance Analytics", desc: "WPM, accuracy, time elapsed, and progress, all tracked live as you type. Your performance data is visualized in beautiful charts, heatmaps, and streak trackers on your personal statistics dashboard." },
                       { icon: "🌊", title: "Dynamic Background Engine", desc: "As your WPM increases, the background comes alive with falling code symbols that accelerate with your typing speed. It's a subtle, immersive detail that makes every session feel alive." },
-                      { icon: "☁️", title: "Cloud-Synced Progress", desc: "Sign in once and your entire history—every session, every stat, every preference—follows you across devices. Your streak, your level, your growth: all persistent." },
+                      { icon: "☁️", title: "Cloud-Synced Progress", desc: "Sign in once and your entire history, every session, every stat, every preference, follows you across devices. Your streak, your level, your growth: all persistent." },
                       { icon: "🔗", title: "Custom URL Loader", desc: "Paste any public code URL and type it. GitHub files are auto-converted to raw URLs. Practice your own projects, study open-source codebases, or challenge yourself with unfamiliar languages." },
                       { icon: "🔤", title: "6 Monospace Fonts", desc: "Choose from JetBrains Mono, Fira Code, Source Code Pro, Inconsolata, Space Mono, and Ubuntu Mono. Each font changes the feel of the entire editor, and the choice is yours." },
                     ].map((f, i) => (
@@ -685,13 +685,13 @@ export default function SettingsPage({
                       pours out of you, when your fingers move faster than your conscious thoughts, when the boundary between you and the machine dissolves. 
                     </p>
                     <p className="about-text">
-                      Flow is fragile. Every time you hesitate on a keystroke—fumbling for a curly brace, second-guessing where the pipe symbol is, 
-                      losing your rhythm to a semicolon—you break it. And once it's broken, it takes minutes to get back.
+                      Flow is fragile. Every time you hesitate on a keystroke, fumbling for a curly brace, second-guessing where the pipe symbol is, 
+                      losing your rhythm to a semicolon, you break it. And once it's broken, it takes minutes to get back.
                     </p>
                     <p className="about-text">
                       <strong style={{ color: t.text }}>Codistic exists to protect your flow state.</strong> By training the mechanical, muscle-memory layer of coding, 
                       we free your mind to focus on what actually matters: logic, architecture, creativity. We don't just want you to type faster. 
-                      We want your fingers to disappear—so that the only thing left is <em>you</em> and the problem you're solving.
+                      We want your fingers to disappear, so that the only thing left is <em>you</em> and the problem you're solving.
                     </p>
                     <p className="about-text" style={{ fontStyle: 'italic', color: accent, fontWeight: 500, marginTop: 4 }}>
                       When the keyboard becomes invisible, the code becomes effortless.
@@ -734,13 +734,13 @@ export default function SettingsPage({
                       ))}
                     </div>
                     <p className="about-text" style={{ marginTop: 8 }}>
-                      Our themes draw inspiration from the iconic color schemes loved by the developer community—<em>Dracula</em>, <em>Nord</em>, 
-                      <em> Tokyo Night</em>, <em>Catppuccin</em>, <em>Gruvbox</em>, and <em>Solarized</em>—each carefully adapted to ensure 
+                      Our themes draw inspiration from the iconic color schemes loved by the developer community: <em>Dracula</em>, <em>Nord</em>, 
+                      <em>Tokyo Night</em>, <em>Catppuccin</em>, <em>Gruvbox</em>, and <em>Solarized</em>, each carefully adapted to ensure 
                       readability and visual comfort during extended sessions.
                     </p>
                     <div style={{ borderTop: `1px solid ${t.border}`, paddingTop: 16, marginTop: 8 }}>
                       <p style={{ fontSize: 12, color: t.textDim, fontFamily: "'JetBrains Mono', monospace", lineHeight: 1.8 }}>
-                        © {new Date().getFullYear()} Codistic. Crafted with obsession by a developer{"\n"}who just wanted to type code faster.
+                        {new Date().getFullYear()} Codistic. Crafted with obsession by a developer{"\n"}who just wanted to type code faster.
                       </p>
                       <p style={{ fontSize: 11, color: t.textDim, fontFamily: "'JetBrains Mono', monospace", marginTop: 4 }}>
                         Open source on GitHub · Made in India 🇮🇳
