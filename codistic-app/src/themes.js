@@ -62,10 +62,24 @@ export const THEMES = {
     untyped: "#414868", correct: "#9ece6a", wrong: "#f7768e",
     wrongBg: "rgba(247,118,142,0.15)", grid: "rgba(192,202,245,0.03)", navBg: "rgba(26,27,38,0.9)",
   },
+  monochrome: {
+    name: "Monochrome", bg: "#000000", surface: "#0a0a0a", surfaceAlt: "#111111",
+    border: "rgba(255,255,255,0.06)", borderStrong: "rgba(255,255,255,0.12)",
+    text: "#ffffff", textMuted: "#777777", textDim: "#444444",
+    untyped: "#222222", correct: "#ffffff", wrong: "#666666",
+    wrongBg: "rgba(255,255,255,0.15)", grid: "rgba(255,255,255,0.01)", navBg: "rgba(0,0,0,0.9)",
+  },
+  monochromeLight: {
+    name: "Paper", bg: "#ffffff", surface: "#fcfcfc", surfaceAlt: "#f5f5f5",
+    border: "rgba(0,0,0,0.05)", borderStrong: "rgba(0,0,0,0.1)",
+    text: "#000000", textMuted: "#666666", textDim: "#a0a0a0",
+    untyped: "#d0d0d0", correct: "#000000", wrong: "#888888",
+    wrongBg: "rgba(0,0,0,0.08)", grid: "rgba(0,0,0,0.02)", navBg: "rgba(255,255,255,0.9)",
+  },
 };
 
 export const THEME_ACCENTS = {
   dark: "#3B82F6", light: "#2563eb", retro: "#00ff41",
   solarized: "#268bd2", nord: "#88c0d0", catppuccin: "#cba6f7",
-  dracula: "#ff79c6", gruvbox: "#fe8019", tokyoNight: "#7aa2f7",
+  dracula: "#ff79c6", gruvbox: "#fe8019", tokyoNight: "#7aa2f7", monochrome: "#ffffff", monochromeLight: "#000000",
 };

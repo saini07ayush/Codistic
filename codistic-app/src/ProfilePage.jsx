@@ -36,7 +36,7 @@ function timeAgo(date) {
   return Math.floor(seconds) + " seconds ago";
 }
 
-export default function ProfilePage({ user, theme, accent, onBack }) {
+export default function ProfilePage({ user, theme, accent, onBack, isMono }) {
   const t = theme;
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -457,7 +457,7 @@ export default function ProfilePage({ user, theme, accent, onBack }) {
                   <div className="session-item" key={s.id}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                       <div className="session-badge" style={{ background: 'transparent', border: `1px solid ${t.border}`, padding: 6, borderRadius: 50 }}>
-                        <div style={{ width: 8, height: 8, borderRadius: '50%', background: LANG_COLORS[s.language] || accent, boxShadow: `0 0 6px ${LANG_COLORS[s.language] || accent}` }} />
+                        <div style={{ width: 8, height: 8, borderRadius: '50%', background: (isMono ? t.textMuted : LANG_COLORS[s.language]) || accent, boxShadow: `0 0 6px ${(isMono ? t.textMuted : LANG_COLORS[s.language]) || accent}` }} />
                       </div>
                       <div>
                         <div className="session-title">{s.language.charAt(0).toUpperCase() + s.language.slice(1)} {s.length} Source</div>

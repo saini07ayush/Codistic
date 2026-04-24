@@ -56,8 +56,9 @@ export default function CodeTyper() {
   const [customText, setCustomText] = useState("");
 
   const timerRef = useRef(null);
+  const isMono = themeName === "monochrome" || themeName === "monochromeLight";
   const theme = THEMES[themeName];
-  const accent = LANG_COLORS[language] || THEME_ACCENTS[themeName];
+  const accent = isMono ? THEME_ACCENTS[themeName] : (LANG_COLORS[language] || THEME_ACCENTS[themeName]);
   const t = theme;
   useEffect(() => {
     localStorage.setItem("codistic-theme", themeName);
@@ -358,6 +359,7 @@ export default function CodeTyper() {
       onBack={() => setShowProfile(false)} 
       fontFamily={fontFamily}
       onFontChange={setFontFamily}
+      isMono={isMono}
     />
   );
 
@@ -538,7 +540,7 @@ export default function CodeTyper() {
             <div className="ctrl-group">
               {LANGUAGES.map((lang) => (
                 <button key={lang} className={`ctrl-btn ${language === lang ? "active" : ""}`} onClick={() => setLanguage(lang)}>
-                  <span className="ctrl-dot" style={{ background: LANG_COLORS[lang] }} />
+                  <span className="ctrl-dot" style={{ background: isMono ? t.textMuted : LANG_COLORS[lang] }} />
                   {lang}
                 </button>
               ))}
