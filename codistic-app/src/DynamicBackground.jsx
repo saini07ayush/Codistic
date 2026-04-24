@@ -2,12 +2,12 @@ import React, { useEffect, useRef } from 'react';
 
 const SYMBOLS = [
   "{", "}", "(", ")", "=>", "</>", "||", "&&", "==", "[]", ";",
-  "function", "const", "let", "return", "class", "import", "def", "if", "else", "await", "async", "public", "void"
+  "function", "const", "let", "return", "class", "import", "def", "if", "else", "await", "async", "public", "void", "printf", "System.out.println", "count", "i++"
 ];
 
 export default function DynamicBackground({ wpm, accent }) {
   const canvasRef = useRef(null);
-  
+
   // Need to smoothly interpolate display WPM to avoid harsh jumping
   const displayWpm = useRef(0);
 
@@ -15,22 +15,22 @@ export default function DynamicBackground({ wpm, accent }) {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
-    
+
     let animationFrameId;
     let particles = [];
-    
+
     const resizeCanvas = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
     };
-    
+
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
 
     // Spawn 80 particles
     const P_COUNT = 80;
     for (let i = 0; i < P_COUNT; i++) {
-        particles.push(createParticle(canvas));
+      particles.push(createParticle(canvas));
     }
 
     function createParticle(cvs, resetTop = false) {
@@ -46,7 +46,7 @@ export default function DynamicBackground({ wpm, accent }) {
 
     const render = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      
+
       // Smooth interpolation for speed multiplier
       displayWpm.current += (wpm - displayWpm.current) * 0.05;
       const speedMulti = 1 + (displayWpm.current / 15);
@@ -62,8 +62,8 @@ export default function DynamicBackground({ wpm, accent }) {
         ctx.fillText(p.text, p.x, p.y);
 
         if (p.y > canvas.height + 50) {
-           Object.assign(p, createParticle(canvas, true));
-           p.x = Math.random() * canvas.width;
+          Object.assign(p, createParticle(canvas, true));
+          p.x = Math.random() * canvas.width;
         }
       });
 
@@ -79,8 +79,8 @@ export default function DynamicBackground({ wpm, accent }) {
   }, [wpm, accent]);
 
   return (
-    <canvas 
-      ref={canvasRef} 
+    <canvas
+      ref={canvasRef}
       style={{
         position: 'fixed',
         inset: 0,
@@ -89,7 +89,7 @@ export default function DynamicBackground({ wpm, accent }) {
         pointerEvents: 'none',
         zIndex: 0,
         opacity: 0.8
-      }} 
+      }}
     />
   );
 }
