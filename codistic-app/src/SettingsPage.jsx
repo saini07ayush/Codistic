@@ -28,9 +28,6 @@ const SHORTCUTS = [
   { keys: "Tab", desc: "Insert 4-space indentation" },
   { keys: "Enter", desc: "Insert newline character" },
   { keys: "Backspace", desc: "Delete the last typed character" },
-  { keys: "↺ new", desc: "Fetch a new random snippet" },
-  { keys: "✎ custom", desc: "Load code from any public URL" },
-  { keys: "⏸ pause", desc: "Pause / resume current session" },
 ];
 
 export default function SettingsPage({ 

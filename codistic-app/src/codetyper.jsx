@@ -686,6 +686,7 @@ export default function CodeTyper() {
                 placeholder="https://github.com/user/repo/blob/main/file.js"
                 value={customText}
                 onChange={(e) => setCustomText(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleStartCustom(); }}
                 autoFocus
               />
               <div className="results-actions">
