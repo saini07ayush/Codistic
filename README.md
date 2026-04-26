@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="public/logo.jpeg" alt="Codistic Logo" width="80" height="80" style="border-radius: 16px;" />
+  <img src="codistic-app/public/logo.jpeg" alt="Codistic Logo" width="80" height="80" style="border-radius: 16px;" />
 </p>
 
 <h1 align="center">Codistic</h1>
