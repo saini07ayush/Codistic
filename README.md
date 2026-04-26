@@ -5,7 +5,7 @@
 <h1 align="center">Codistic</h1>
 
 <p align="center">
-  <strong>The Code Typing Engine — Practice typing real code, not prose.</strong>
+  <strong>The Code Typing Engine. Practice typing real code, not prose.</strong>
 </p>
 
 <p align="center">
@@ -24,7 +24,7 @@
 
 ## The Problem
 
-Traditional typing trainers measure how fast you can type English. But when you sit down to actually code, you're battling an entirely different set of keystrokes: `{ } ( ) => [] === && || ;` — the symbols, indentation patterns, and nested syntax that no prose-based trainer ever practices. Codistic was built to fix that.
+Traditional typing trainers measure how fast you can type English. But when you sit down to actually code, you're battling an entirely different set of keystrokes: `{ } ( ) => [] === && || ;`, the symbols, indentation patterns, and nested syntax that no prose-based trainer ever practices. Codistic was built to fix that.
 
 > *"When the keyboard becomes invisible, the code becomes effortless."*
 
@@ -33,7 +33,7 @@ Traditional typing trainers measure how fast you can type English. But when you 
 ## Features
 
 ### Real Code Snippets from GitHub
-Snippets are pulled **live from top-tier open-source repositories** via the GitHub API. Every session uses actual production code — no contrived exercises or random character strings.
+Snippets are pulled **live from top-tier open-source repositories** via the GitHub API. Every session uses actual production code, never contrived exercises or random character strings.
 
 **Supported languages:**
 
@@ -47,9 +47,9 @@ Snippets are pulled **live from top-tier open-source repositories** via the GitH
 | Rust | `TheAlgorithms/Rust` |
 
 ### Three Difficulty Tiers
-- **Short** — Quick warm-ups (5–15 lines). Perfect for daily practice.
-- **Warmup (Medium)** — Focused sessions (15–35 lines). Build consistency.
-- **Full (Long)** — Deep sessions (up to 150 lines). Test your endurance.
+- **Short**: Quick warm-ups, 5 to 15 lines. Perfect for daily practice.
+- **Warmup (Medium)**: Focused sessions, 15 to 35 lines. Build consistency.
+- **Full (Long)**: Deep sessions, up to 150 lines. Test your endurance.
 
 ### Custom URL Loader
 Paste any public code URL and type it instantly. GitHub blob URLs are **auto-converted to raw URLs**. Practice your own codebase, your team's style guide, or an open-source library you're studying.
@@ -69,18 +69,18 @@ Every theme is carefully adapted for readability and visual comfort during exten
 | Gruvbox | `#fe8019` | Retro groove color scheme |
 | Tokyo Night | `#7aa2f7` | Midnight in Tokyo |
 | Monochrome | `#ffffff` | Pure black & white |
-| Paper | `#000000` | Light monochrome — ink on paper |
+| Paper | `#000000` | Light monochrome, ink on paper |
 
 ### 6 Monospace Editor Fonts
-Choose from **JetBrains Mono**, **Fira Code**, **Source Code Pro**, **Inconsolata**, **Space Mono**, and **Ubuntu Mono** — with adjustable font size (12–24px).
+Choose from **JetBrains Mono**, **Fira Code**, **Source Code Pro**, **Inconsolata**, **Space Mono**, and **Ubuntu Mono**, with adjustable font size from 12 to 24px.
 
 ### Real-Time Performance Dashboard
-- **Live stats** — WPM, accuracy, elapsed time, and progress tracked in real time as you type.
-- **Performance Matrix** — Area chart of WPM trends across your last 30 sessions (powered by Recharts).
-- **Activity Heatmap** — GitHub-style heatmap showing your practice consistency over the last 12 weeks.
-- **Daily Streak** — Consecutive days practiced.
-- **Proficiency Zenith** — Your top language with mastery progress, lines codified, and average accuracy.
-- **Level System** — Progress through ranks: Novice I → Adept II → Pro III → Elite IV → Apex V.
+- **Live stats**: WPM, accuracy, elapsed time, and progress tracked in real time as you type.
+- **Performance Matrix**: Area chart of WPM trends across your last 30 sessions, powered by Recharts.
+- **Activity Heatmap**: GitHub-style heatmap showing your practice consistency over the last 12 weeks.
+- **Daily Streak**: Consecutive days practiced.
+- **Proficiency Zenith**: Your top language with mastery progress, lines codified, and average accuracy.
+- **Level System**: Progress through ranks from Novice I to Apex V.
 
 ### Dynamic Background Engine
 A canvas-based particle system renders falling code glyphs (`{ } => </> || && == [] ;`, `function`, `const`, `return`, etc.) that **accelerate with your WPM**. The faster you type, the more alive the background becomes.
@@ -89,15 +89,15 @@ A canvas-based particle system renders falling code glyphs (`{ } => </> || && ==
 Sign in with **Google** or **email/password** (Firebase Auth). All session data, preferences, and stats are persisted to **Firestore** and follow you across devices.
 
 ### Pause & Resume
-Mid-session pause support — freeze the timer and resume without losing progress.
+Mid-session pause support. Freeze the timer and resume without losing progress.
 
 ### Comprehensive Settings Dashboard
 A tab-based settings page with:
-- **Account** — Display name, profile picture (uploaded to Firebase Storage), email display.
-- **Appearance** — Theme, font, and font size selection with a **live code preview** panel.
-- **Shortcuts** — Reference for all keyboard controls.
-- **About** — Origin story, philosophy, feature breakdown, and technology credits.
-- **Contact** — Email and GitHub links with inline feedback form.
+- **Account**: Display name, profile picture (uploaded to Firebase Storage), email display.
+- **Appearance**: Theme, font, and font size selection with a **live code preview** panel.
+- **Shortcuts**: Reference for all keyboard controls.
+- **About**: Origin story, philosophy, feature breakdown, and technology credits.
+- **Contact**: Email and GitHub links with inline feedback form.
 
 ---
 
@@ -156,7 +156,7 @@ A tab-based settings page with:
 - **Node.js** ≥ 18
 - **npm** ≥ 9
 - A **Firebase** project with Auth, Firestore, and Storage enabled
-- A **GitHub Personal Access Token** (for the snippet API — avoids rate limits)
+- A **GitHub Personal Access Token** (for the snippet API, avoids rate limits)
 
 ### 1. Clone the Repository
 
@@ -285,8 +285,8 @@ users/
 ### Vercel Deployment
 
 The included `vercel.json` configures:
-- **SPA Rewrites** — All routes rewrite to `/index.html` for client-side routing.
-- **CORS Headers** — `Cross-Origin-Opener-Policy: same-origin-allow-popups` is set to support Firebase Google Auth popups.
+- **SPA Rewrites**: All routes rewrite to `/index.html` for client-side routing.
+- **CORS Headers**: `Cross-Origin-Opener-Policy: same-origin-allow-popups` is set to support Firebase Google Auth popups.
 
 ---
 
@@ -301,7 +301,7 @@ flowchart TD
     E --> F[Extract function-level snippets]
     F --> G[Strip comments & normalize indent]
     G --> H[Display in editor UI]
-    H --> I[User types — keydown events captured]
+    H --> I[User types - keydown events captured]
     I --> J[Real-time WPM & accuracy calculation]
     J --> K{Snippet complete?}
     K -->|No| I
