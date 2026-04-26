@@ -32,7 +32,7 @@ Traditional typing trainers measure how fast you can type English. But when you 
 
 ## Features
 
-### ⌨️ Real Code Snippets from GitHub
+### Real Code Snippets from GitHub
 Snippets are pulled **live from top-tier open-source repositories** via the GitHub API. Every session uses actual production code — no contrived exercises or random character strings.
 
 **Supported languages:**
@@ -46,15 +46,15 @@ Snippets are pulled **live from top-tier open-source repositories** via the GitH
 | Go | `TheAlgorithms/Go` |
 | Rust | `TheAlgorithms/Rust` |
 
-### 📏 Three Difficulty Tiers
+### Three Difficulty Tiers
 - **Short** — Quick warm-ups (5–15 lines). Perfect for daily practice.
 - **Warmup (Medium)** — Focused sessions (15–35 lines). Build consistency.
 - **Full (Long)** — Deep sessions (up to 150 lines). Test your endurance.
 
-### 🔗 Custom URL Loader
+### Custom URL Loader
 Paste any public code URL and type it instantly. GitHub blob URLs are **auto-converted to raw URLs**. Practice your own codebase, your team's style guide, or an open-source library you're studying.
 
-### 🎨 11 Hand-Tuned Themes
+### 11 Hand-Tuned Themes
 Every theme is carefully adapted for readability and visual comfort during extended sessions.
 
 | Theme | Accent | Style |
@@ -71,10 +71,10 @@ Every theme is carefully adapted for readability and visual comfort during exten
 | Monochrome | `#ffffff` | Pure black & white |
 | Paper | `#000000` | Light monochrome — ink on paper |
 
-### 🔤 6 Monospace Editor Fonts
+### 6 Monospace Editor Fonts
 Choose from **JetBrains Mono**, **Fira Code**, **Source Code Pro**, **Inconsolata**, **Space Mono**, and **Ubuntu Mono** — with adjustable font size (12–24px).
 
-### 📊 Real-Time Performance Dashboard
+### Real-Time Performance Dashboard
 - **Live stats** — WPM, accuracy, elapsed time, and progress tracked in real time as you type.
 - **Performance Matrix** — Area chart of WPM trends across your last 30 sessions (powered by Recharts).
 - **Activity Heatmap** — GitHub-style heatmap showing your practice consistency over the last 12 weeks.
@@ -82,16 +82,16 @@ Choose from **JetBrains Mono**, **Fira Code**, **Source Code Pro**, **Inconsolat
 - **Proficiency Zenith** — Your top language with mastery progress, lines codified, and average accuracy.
 - **Level System** — Progress through ranks: Novice I → Adept II → Pro III → Elite IV → Apex V.
 
-### 🌊 Dynamic Background Engine
+### Dynamic Background Engine
 A canvas-based particle system renders falling code glyphs (`{ } => </> || && == [] ;`, `function`, `const`, `return`, etc.) that **accelerate with your WPM**. The faster you type, the more alive the background becomes.
 
-### ☁️ Cloud-Synced Progress
+### Cloud-Synced Progress
 Sign in with **Google** or **email/password** (Firebase Auth). All session data, preferences, and stats are persisted to **Firestore** and follow you across devices.
 
-### ⏸️ Pause & Resume
+### Pause & Resume
 Mid-session pause support — freeze the timer and resume without losing progress.
 
-### 🛠️ Comprehensive Settings Dashboard
+### Comprehensive Settings Dashboard
 A tab-based settings page with:
 - **Account** — Display name, profile picture (uploaded to Firebase Storage), email display.
 - **Appearance** — Theme, font, and font size selection with a **live code preview** panel.
@@ -109,7 +109,7 @@ A tab-based settings page with:
 
 ```
 ┌──────────────────────────────────────────────────┐
-│  🟢 codistic          WPM  ACC  TIME     Theme  │
+│  codistic             WPM  ACC  TIME     Theme  │
 ├──────────────────────────────────────────────────┤
 │  [python] [js] [java] [cpp] [go] [rust] │ ↺ new │
 │  ━━━━━━━━━━━━━━━━━━━ 42% ━━━━━━━━━━━━━━━━━━━━  │
@@ -215,7 +215,7 @@ codistic-app/
 ├── src/
 │   ├── main.jsx               # React DOM entry point
 │   ├── App.jsx                # Root component (renders CodeTyper)
-│   ├── codetyper.jsx          # 🔑 Core typing engine & main UI
+│   ├── codetyper.jsx          # Core typing engine & main UI
 │   ├── AuthPage.jsx           # Sign-in / sign-up page
 │   ├── ProfilePage.jsx        # Statistics dashboard (charts, heatmap, streak)
 │   ├── SettingsPage.jsx       # Settings dashboard (account, appearance, about, etc.)
@@ -351,5 +351,5 @@ This project is open source. See the repository for license details.
 
 <p align="center">
   <strong>Crafted with obsession by a developer who just wanted to type code faster.</strong><br/>
-  <sub>Made in India 🇮🇳</sub>
+  <sub>Made in India</sub>
 </p>
