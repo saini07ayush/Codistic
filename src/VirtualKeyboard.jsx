@@ -63,7 +63,7 @@ const KEYBOARD_ROWS = [
     { key: "ShiftRight", label: "Shift", w: 2.75 },
   ],
   [
-    { key: "Space", label: "", w: 8 },
+    { key: "Space", label: "codistic.xyz", w: 8 },
   ],
 ];
 
@@ -82,7 +82,7 @@ function getKeysForChar(char) {
   return [];
 }
 
-export default function VirtualKeyboard({ theme, accent, nextChar, lastKeyCorrect, lastKeyTimestamp, compact, onHide }) {
+export default function VirtualKeyboard({ theme, accent, nextChar, lastKeyCorrect, lastKeyTimestamp, compact, small, onHide }) {
   const t = theme;
   const [pressedKeys, setPressedKeys] = useState(new Set());
   const [flashKey, setFlashKey] = useState(null); // { keyId, correct }
@@ -191,13 +191,13 @@ export default function VirtualKeyboard({ theme, accent, nextChar, lastKeyCorrec
   // Check if shift is needed for next char
   const needsShift = nextKeys.some((k) => k.keyId === "ShiftLeft");
 
-  const keyUnit = compact ? 30 : 48; // px per unit width
-  const keyGap = compact ? 2 : 4;
-  const keyHeight = compact ? 28 : 44;
-  const fontSize = compact ? 9 : 12;
-  const shiftFontSize = compact ? 7 : 9;
-  const shiftActiveFontSize = compact ? 10 : 13;
-  const shiftActiveMainFontSize = compact ? 7 : 9;
+  const keyUnit = compact ? 30 : small ? 36 : 48;
+  const keyGap = compact ? 2 : small ? 3 : 4;
+  const keyHeight = compact ? 28 : small ? 32 : 44;
+  const fontSize = compact ? 9 : small ? 10 : 12;
+  const shiftFontSize = compact ? 7 : small ? 8 : 9;
+  const shiftActiveFontSize = compact ? 10 : small ? 11 : 13;
+  const shiftActiveMainFontSize = compact ? 7 : small ? 8 : 9;
 
   const renderKey = (k, isNext, isPhysicallyPressed, isFlashCorrect, isFlashWrong) => {
     let cls = "vkb-key";
@@ -216,7 +216,9 @@ export default function VirtualKeyboard({ theme, accent, nextChar, lastKeyCorrec
         className={cls}
         style={{ width, minWidth: width, height: keyHeight }}
       >
-        {k.shift && !k.label ? (
+        {k.key === "Space" ? (
+          <span className="vkb-space-label">{k.label}</span>
+        ) : k.shift && !k.label ? (
           <>
             <span className="vkb-shift-label">{k.shift}</span>
             <span className="vkb-main-label">{k.key}</span>
@@ -253,9 +255,9 @@ export default function VirtualKeyboard({ theme, accent, nextChar, lastKeyCorrec
       <style>{`
         .vkb-container {
           width: 100%;
-          max-width: ${compact ? '520px' : '820px'};
+          max-width: ${compact ? '520px' : small ? '660px' : '820px'};
           margin: 0 auto;
-          padding: ${compact ? '8px 8px 6px' : '14px 12px'};
+          padding: ${compact || small ? '5px 8px 5px' : '6px 10px 6px'};
           background: ${t.surface};
           border: 1px solid ${t.border};
           border-radius: ${compact ? '10px' : '14px'};
@@ -264,6 +266,7 @@ export default function VirtualKeyboard({ theme, accent, nextChar, lastKeyCorrec
           gap: ${keyGap}px;
           user-select: none;
           box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+          position: relative;
         }
         .vkb-container.vkb-compact {
           position: fixed;
@@ -277,64 +280,37 @@ export default function VirtualKeyboard({ theme, accent, nextChar, lastKeyCorrec
           from { transform: translateY(20px) scale(0.95); opacity: 0; }
           to { transform: translateY(0) scale(1); opacity: 1; }
         }
-        .vkb-header {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 6px;
-          padding: 0 2px 2px;
-        }
-        .vkb-drag-handle {
-          flex: 1;
-          cursor: ${compact ? 'grab' : 'default'};
-          display: flex;
-          align-items: center;
-          gap: 4px;
-          padding: 2px 4px;
-          border-radius: 4px;
-          color: ${t.textDim};
-          font-family: 'JetBrains Mono', monospace;
-          font-size: ${compact ? '8px' : '10px'};
-          user-select: none;
-          -webkit-user-select: none;
-        }
-        .vkb-drag-handle:active {
-          cursor: ${compact ? 'grabbing' : 'default'};
-        }
-        .vkb-drag-dots {
-          display: flex;
-          gap: 2px;
-          flex-direction: column;
-          opacity: 0.5;
-        }
-        .vkb-drag-dots > span {
-          display: flex;
-          gap: 2px;
-        }
-        .vkb-drag-dot {
-          width: 2px;
-          height: 2px;
-          border-radius: 50%;
-          background: ${t.textDim};
-        }
         .vkb-hide-btn {
-          padding: ${compact ? '2px 8px' : '3px 10px'};
-          border-radius: 5px;
-          border: 1px solid ${t.border};
+          position: absolute;
+          top: 5px;
+          left: 6px;
+          z-index: 2;
+          padding: 3px 4px;
+          border-radius: 4px;
+          border: none;
           background: transparent;
           color: ${t.textDim};
-          font-family: 'JetBrains Mono', monospace;
-          font-size: ${compact ? '8px' : '10px'};
           cursor: pointer;
+          opacity: 0.35;
           transition: all 0.15s;
           display: flex;
           align-items: center;
-          gap: 4px;
+          justify-content: center;
+          line-height: 0;
         }
         .vkb-hide-btn:hover {
           color: ${t.textMuted};
-          border-color: ${t.textMuted};
+          opacity: 1;
           background: ${t.border};
+        }
+        .vkb-space-label {
+          font-size: ${compact || small ? 8 : 10}px;
+          color: ${t.textDim};
+          opacity: 0.45;
+          letter-spacing: 1px;
+          font-family: 'JetBrains Mono', monospace;
+          font-weight: 400;
+          pointer-events: none;
         }
         .vkb-row {
           display: flex;
@@ -426,25 +402,12 @@ export default function VirtualKeyboard({ theme, accent, nextChar, lastKeyCorrec
           bottom: 'auto',
         } : undefined}
       >
-        <div className="vkb-header">
-          {compact && (
-            <div
-              className="vkb-drag-handle"
-              onMouseDown={handleDragStart}
-              onTouchStart={handleDragStart}
-            >
-              <div className="vkb-drag-dots">
-                <span><span className="vkb-drag-dot" /><span className="vkb-drag-dot" /><span className="vkb-drag-dot" /></span>
-                <span><span className="vkb-drag-dot" /><span className="vkb-drag-dot" /><span className="vkb-drag-dot" /></span>
-              </div>
-            </div>
-          )}
-          <span style={{ flex: compact ? 0 : 1, fontFamily: "'JetBrains Mono', monospace", fontSize: compact ? 8 : 10, color: t.textDim, letterSpacing: '0.5px' }}>codistic.xyz</span>
-          <button className="vkb-hide-btn" title="Ctrl + K" onClick={onHide}>
-            <svg width={compact ? 8 : 10} height={compact ? 8 : 10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-            hide
-          </button>
-        </div>
+        <button className="vkb-hide-btn" title="Ctrl + K" onClick={onHide}>
+          <svg width={compact || small ? 11 : 13} height={compact || small ? 11 : 13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+            <line x1="1" y1="1" x2="23" y2="23"/>
+          </svg>
+        </button>
         {renderRows(KEYBOARD_ROWS)}
       </div>
     </>

@@ -73,6 +73,36 @@ export default function CodeTyper() {
   const theme = THEMES[themeName];
   const accent = isMono ? THEME_ACCENTS[themeName] : (LANG_COLORS[language] || THEME_ACCENTS[themeName]);
   const t = theme;
+
+  // Fullscreen helpers
+  const enterFullscreen = () => {
+    const el = document.documentElement;
+    if (el.requestFullscreen) el.requestFullscreen();
+    else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+  };
+  const exitFullscreen = () => {
+    if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
+    else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+  };
+  const toggleFocusMode = (currentValue) => {
+    const next = !currentValue;
+    setFocusMode(next);
+    if (next) enterFullscreen(); else exitFullscreen();
+  };
+  // Sync focusMode if user exits fullscreen natively (Escape key)
+  useEffect(() => {
+    const onFsChange = () => {
+      const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+      if (!isFs) setFocusMode(false);
+    };
+    document.addEventListener('fullscreenchange', onFsChange);
+    document.addEventListener('webkitfullscreenchange', onFsChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', onFsChange);
+      document.removeEventListener('webkitfullscreenchange', onFsChange);
+    };
+  }, []);
+
   useEffect(() => {
     localStorage.setItem("codistic-theme", themeName);
   }, [themeName]);
@@ -142,6 +172,7 @@ export default function CodeTyper() {
     setStarted(false);
     setFinished(false);
     setFocusMode(false);
+    exitFullscreen();
     setKeyboardHidden(false);
     setWpm(0);
     setAccuracy(100);
@@ -255,7 +286,7 @@ export default function CodeTyper() {
     // Global shortcuts (work anytime, not just during typing)
     if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
       e.preventDefault();
-      setFocusMode(f => !f);
+      setFocusMode(f => { const next = !f; if (next) enterFullscreen(); else exitFullscreen(); return next; });
       return;
     }
     if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
@@ -478,9 +509,14 @@ export default function CodeTyper() {
         .btn-nav:hover { color: ${t.text}; border-color: ${t.text}; }
         .btn-nav-accent { padding: 7px 14px; border-radius: 8px; border: none; background: ${accent}; color: #fff; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; transition: opacity 0.15s; }
         .btn-nav-accent:hover { opacity: 0.85; }
+        .app.focus-active { height: 100vh; overflow: hidden; }
         main { position: relative; z-index: 1; flex: 1; display: flex; flex-direction: column; align-items: center; padding: 48px 24px; gap: 24px; transition: padding 0.4s cubic-bezier(0.4,0,0.2,1); }
-        main.focus-mode { padding: 12px 24px; justify-content: flex-start; gap: 12px; }
-        main.focus-mode .editor-body { max-height: 70vh; overflow-y: auto; }
+        main.focus-mode { padding: 8px 24px 6px; flex: 1; min-height: 0; justify-content: flex-start; gap: 6px; }
+        main.focus-mode .editor-wrap { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+        main.focus-mode .editor-body { flex: 1; overflow-y: auto; min-height: 0; max-height: none; }
+        main.focus-mode .code-display { font-size: clamp(12px, 1.3vw, 18px); line-height: 1.75; }
+        main.focus-mode .line-num { font-size: clamp(12px, 1.3vw, 18px); line-height: 1.75; }
+        .focus-keyboard { padding: 0 24px 16px; display: flex; justify-content: center; flex-shrink: 0; }
         .controls { display: flex; align-items: center; gap: 8px; padding: 6px; background: ${t.surfaceAlt}; border: 1px solid ${t.border}; border-radius: 12px; transition: all 0.4s cubic-bezier(0.4,0,0.2,1); max-height: 60px; overflow: hidden; opacity: 1; }
         .controls.focus-hidden { display: none; }
         .ctrl-group { display: flex; gap: 4px; }
@@ -556,7 +592,7 @@ export default function CodeTyper() {
         .footer-copy { font-size: 11px; color: ${t.textDim}; font-family: 'JetBrains Mono', monospace; }
       `}</style>
 
-      <div className="app">
+      <div className={`app${focusMode ? ' focus-active' : ''}`}>
         <DynamicBackground wpm={finished ? 0 : wpm} accent={accent} />
         <div className="glow-orb" />
 
@@ -682,9 +718,12 @@ export default function CodeTyper() {
                   <div className="focus-stat"><span className="focus-stat-value">{snippet ? Math.round((typed.length / snippet.code.length) * 100) : 0}%</span> done</div>
                 </div>
               ) : (
-                <span className="editor-filename">{snippet ? snippet.file : "loading..."}</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span className="editor-filename">{snippet ? snippet.file : "loading..."}</span>
+                  {snippet?.source && <span className="editor-source">{snippet.source}</span>}
+                </span>
               )}
-              <button className="focus-exit-btn" title="Ctrl + F" onClick={() => setFocusMode(f => !f)}>
+              <button className="focus-exit-btn" title="Ctrl + F" onClick={() => toggleFocusMode(focusMode)}>
                 {focusMode ? (
                   <><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/></svg> exit focus</>
                 ) : (
@@ -738,18 +777,19 @@ export default function CodeTyper() {
             ))}
           </div>
 
-          {!started && !loading && <p className="hint">start typing to begin · tab for indentation</p>}
+
         </main>
 
         {showKeyboard && !keyboardHidden && (
-          <div style={{ padding: '0 24px 24px', display: 'flex', justifyContent: 'center' }}>
+          <div className="focus-keyboard">
             <VirtualKeyboard
               theme={t}
               accent={accent}
               nextChar={snippet && !finished && cursorPos < snippet.code.length ? snippet.code[cursorPos] : null}
               lastKeyCorrect={lastKeyCorrect}
               lastKeyTimestamp={lastKeyTimestamp}
-              compact={snippet && snippet.code.split('\n').length > 15}
+              compact={!focusMode && snippet && snippet.code.split('\n').length > 15}
+              small={focusMode}
               onHide={() => setKeyboardHidden(true)}
             />
           </div>
