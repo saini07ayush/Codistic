@@ -25,16 +25,20 @@ const TABS = [
 
 const SHORTCUTS = [
   { keys: "Any Key", desc: "Start typing to begin the session" },
-  { keys: "Tab", desc: "Insert 4-space indentation" },
+  { keys: "Tab", desc: "Insert indentation (configurable spaces)" },
   { keys: "Enter", desc: "Insert newline character" },
   { keys: "Backspace", desc: "Delete the last typed character" },
+  { keys: "Ctrl + F", desc: "Toggle focus mode (during typing)" },
+  { keys: "Ctrl + K", desc: "Show / hide the virtual keyboard" },
 ];
 
 export default function SettingsPage({ 
   user, theme, accent, onBack, 
   fontFamily, setFontFamily, 
   fontSize, setFontSize,
-  themeName, setThemeName
+  themeName, setThemeName,
+  showKeyboard, setShowKeyboard,
+  tabSize, setTabSize
 }) {
   const t = theme;
   const [activeTab, setActiveTab] = useState("account");
@@ -324,6 +328,31 @@ export default function SettingsPage({
           font-family: 'JetBrains Mono', monospace;
           color: ${t.text};
         }
+        .toggle-switch {
+          position: relative;
+          width: 44px;
+          height: 24px;
+          border-radius: 12px;
+          border: none;
+          cursor: pointer;
+          transition: background 0.2s;
+          flex-shrink: 0;
+        }
+        .toggle-switch::after {
+          content: '';
+          position: absolute;
+          top: 3px;
+          left: 3px;
+          width: 18px;
+          height: 18px;
+          border-radius: 50%;
+          background: #fff;
+          transition: transform 0.2s;
+        }
+        .toggle-switch.on { background: ${accent}; }
+        .toggle-switch.on::after { transform: translateX(20px); }
+        .toggle-switch.off { background: ${t.border}; }
+        .toggle-switch.off::after { transform: translateX(0); }
       `}</style>
 
       <div className="settings-wrap">
@@ -453,6 +482,51 @@ export default function SettingsPage({
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: t.textDim, marginTop: 4 }}>
                       <span>12px</span>
                       <span>24px</span>
+                    </div>
+                  </div>
+
+                  <div className="settings-field">
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div>
+                        <span className="settings-label">Virtual Keyboard</span>
+                        <div style={{ fontSize: 12, color: t.textMuted, marginTop: 2 }}>
+                          Show an on-screen keyboard that highlights the next key to press. Automatically uses a compact popup for longer snippets.
+                        </div>
+                      </div>
+                      <button 
+                        className={`toggle-switch ${showKeyboard ? 'on' : 'off'}`}
+                        onClick={() => setShowKeyboard(!showKeyboard)}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="settings-field">
+                    <span className="settings-label">Tab Size: {tabSize} spaces</span>
+                    <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+                      {[2, 4, 8].map(n => (
+                        <button
+                          key={n}
+                          onClick={() => setTabSize(n)}
+                          style={{
+                            flex: 1,
+                            padding: '8px 0',
+                            borderRadius: 8,
+                            border: `1px solid ${tabSize === n ? accent : t.border}`,
+                            background: tabSize === n ? accent + '18' : 'transparent',
+                            color: tabSize === n ? accent : t.textMuted,
+                            fontFamily: "'JetBrains Mono', monospace",
+                            fontSize: 13,
+                            fontWeight: tabSize === n ? 600 : 400,
+                            cursor: 'pointer',
+                            transition: 'all 0.15s',
+                          }}
+                        >
+                          {n}
+                        </button>
+                      ))}
+                    </div>
+                    <div style={{ fontSize: 12, color: t.textMuted, marginTop: 4 }}>
+                      Number of spaces inserted when you press Tab.
                     </div>
                   </div>
 

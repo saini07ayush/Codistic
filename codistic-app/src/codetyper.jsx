@@ -8,6 +8,7 @@ import AuthPage from "./AuthPage";
 import ProfilePage from "./ProfilePage";
 import SettingsPage from "./SettingsPage";
 import DynamicBackground from "./DynamicBackground";
+import VirtualKeyboard from "./VirtualKeyboard";
 
 const LANGUAGES = ["python", "javascript", "java", "cpp", "go", "rust"];
 const LENGTHS = ["short", "medium", "long"];
@@ -54,8 +55,20 @@ export default function CodeTyper() {
   const [showSettings, setShowSettings] = useState(false);
   const [showCustomModal, setShowCustomModal] = useState(false);
   const [customText, setCustomText] = useState("");
+  const [lastKeyCorrect, setLastKeyCorrect] = useState(true);
+  const [lastKeyTimestamp, setLastKeyTimestamp] = useState(null);
+  const [focusMode, setFocusMode] = useState(false);
+  const [showKeyboard, setShowKeyboard] = useState(() => {
+    const stored = localStorage.getItem("codistic-show-keyboard");
+    return stored === null ? true : stored === "true";
+  });
+  const [keyboardHidden, setKeyboardHidden] = useState(false);
+  const [tabSize, setTabSize] = useState(() => {
+    return parseInt(localStorage.getItem("codistic-tabsize")) || 4;
+  });
 
   const timerRef = useRef(null);
+  const editorWrapRef = useRef(null);
   const isMono = themeName === "monochrome" || themeName === "monochromeLight";
   const theme = THEMES[themeName];
   const accent = isMono ? THEME_ACCENTS[themeName] : (LANG_COLORS[language] || THEME_ACCENTS[themeName]);
@@ -128,6 +141,8 @@ export default function CodeTyper() {
     setTyped("");
     setStarted(false);
     setFinished(false);
+    setFocusMode(false);
+    setKeyboardHidden(false);
     setWpm(0);
     setAccuracy(100);
     setElapsed(0);
@@ -237,18 +252,66 @@ export default function CodeTyper() {
   }, [finished]);
 
   const handleKeyDown = useCallback((e) => {
+    // Global shortcuts (work anytime, not just during typing)
+    if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+      e.preventDefault();
+      setFocusMode(f => !f);
+      return;
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+      e.preventDefault();
+      setShowKeyboard(k => {
+        const newVal = !k;
+        localStorage.setItem("codistic-show-keyboard", String(newVal));
+        return newVal;
+      });
+      return;
+    }
     if (finished || !snippet || showAuth || showProfile || showThemePicker || showCustomModal || paused) return;
     if (e.key === "Tab") {
       e.preventDefault();
-      if (!started) { setStarted(true); setStartTime(Date.now()); }
-      const newTyped = typed + "    ";
+      if (!started) {
+        setStarted(true); setStartTime(Date.now());
+        setFocusMode(true);
+        setTimeout(() => {
+          if (editorWrapRef.current) {
+            const rect = editorWrapRef.current.getBoundingClientRect();
+            window.scrollTo({ top: window.scrollY + rect.top - 8, behavior: 'smooth' });
+          }
+        }, 450);
+      }
+      const tabStr = ' '.repeat(tabSize);
+      const newTyped = typed + tabStr;
+      let tabCorrect = true;
+      for (let ti = 0; ti < tabStr.length; ti++) {
+        if (snippet.code[typed.length + ti] !== ' ') { tabCorrect = false; break; }
+      }
+      setLastKeyCorrect(tabCorrect);
+      setLastKeyTimestamp(Date.now());
       setTyped(newTyped);
       setCursorPos(newTyped.length);
+      if (newTyped.length >= snippet.code.length) {
+        setFinished(true); setFocusMode(false); clearInterval(timerRef.current);
+        const timeTaken = (Date.now() - startTime) / 1000 / 60;
+        setWpm(Math.round(snippet.code.split(/\s+/).length / timeTaken));
+      }
       return;
     }
     if (e.key === "Enter") {
       e.preventDefault();
-      if (!started) { setStarted(true); setStartTime(Date.now()); }
+      if (!started) {
+        setStarted(true); setStartTime(Date.now());
+        setFocusMode(true);
+        setTimeout(() => {
+          if (editorWrapRef.current) {
+            const rect = editorWrapRef.current.getBoundingClientRect();
+            window.scrollTo({ top: window.scrollY + rect.top - 8, behavior: 'smooth' });
+          }
+        }, 450);
+      }
+      const enterCorrect = snippet.code[typed.length] === "\n";
+      setLastKeyCorrect(enterCorrect);
+      setLastKeyTimestamp(Date.now());
       const newTyped = typed + "\n";
       setTyped(newTyped);
       setCursorPos(newTyped.length);
@@ -263,8 +326,20 @@ export default function CodeTyper() {
     }
     if (e.key.length === 1) {
       e.preventDefault();
-      if (!started) { setStarted(true); setStartTime(Date.now()); }
+      if (!started) {
+        setStarted(true); setStartTime(Date.now());
+        setFocusMode(true);
+        setTimeout(() => {
+          if (editorWrapRef.current) {
+            const rect = editorWrapRef.current.getBoundingClientRect();
+            window.scrollTo({ top: window.scrollY + rect.top - 8, behavior: 'smooth' });
+          }
+        }, 450);
+      }
       const newTyped = typed + e.key;
+      const charCorrect = snippet.code[typed.length] === e.key;
+      setLastKeyCorrect(charCorrect);
+      setLastKeyTimestamp(Date.now());
       setTyped(newTyped);
       setCursorPos(newTyped.length);
       let correct = 0;
@@ -274,13 +349,14 @@ export default function CodeTyper() {
       setAccuracy(Math.round((correct / newTyped.length) * 100));
       if (newTyped.length >= snippet.code.length) {
         setFinished(true);
+        setFocusMode(false);
         clearInterval(timerRef.current);
         const timeTaken = (Date.now() - startTime) / 1000 / 60;
         const words = snippet.code.split(/\s+/).length;
         setWpm(Math.round(words / timeTaken));
       }
     }
-  }, [typed, started, finished, snippet, startTime, showAuth, showProfile, showThemePicker, showCustomModal, paused]);
+  }, [typed, started, finished, snippet, startTime, showAuth, showProfile, showThemePicker, showCustomModal, paused, tabSize]);
 
   useEffect(() => {
     window.addEventListener("keydown", handleKeyDown);
@@ -290,7 +366,17 @@ export default function CodeTyper() {
   useEffect(() => {
     const cursor = document.getElementById("typing-cursor");
     if (cursor) {
-      cursor.scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'center' });
+      // Scroll within the editor body, not the whole page
+      const editorBody = cursor.closest('.editor-body');
+      if (editorBody) {
+        const cursorRect = cursor.getBoundingClientRect();
+        const bodyRect = editorBody.getBoundingClientRect();
+        if (cursorRect.bottom > bodyRect.bottom - 20) {
+          editorBody.scrollTop += cursorRect.bottom - bodyRect.bottom + 40;
+        } else if (cursorRect.top < bodyRect.top + 20) {
+          editorBody.scrollTop -= bodyRect.top - cursorRect.top + 40;
+        }
+      }
     }
   }, [cursorPos]);
 
@@ -348,6 +434,10 @@ export default function CodeTyper() {
       setFontSize={setFontSize}
       themeName={themeName}
       setThemeName={setThemeName}
+      showKeyboard={showKeyboard}
+      setShowKeyboard={(v) => { setShowKeyboard(v); localStorage.setItem("codistic-show-keyboard", String(v)); }}
+      tabSize={tabSize}
+      setTabSize={(v) => { setTabSize(v); localStorage.setItem("codistic-tabsize", String(v)); }}
     />
   );
   
@@ -372,7 +462,10 @@ export default function CodeTyper() {
         .app { min-height: 100vh; display: flex; flex-direction: column; background: ${t.bg}; position: relative; }
         .app::before { display: none; }
         .glow-orb { position: fixed; width: 600px; height: 600px; border-radius: 50%; filter: blur(120px); opacity: 0.06; pointer-events: none; z-index: 0; background: ${accent}; top: -200px; left: 20%; transition: background 0.6s; }
-        nav { position: relative; z-index: 10; display: flex; align-items: center; justify-content: center; height: 64px; border-bottom: 1px solid ${t.border}; backdrop-filter: blur(12px); background: ${t.navBg}; }
+        nav { position: relative; z-index: 10; display: flex; align-items: center; justify-content: center; height: 64px; border-bottom: 1px solid ${t.border}; backdrop-filter: blur(12px); background: ${t.navBg}; transition: all 0.4s cubic-bezier(0.4,0,0.2,1); }
+        nav.focus-hidden { height: 0; border-bottom-color: transparent; opacity: 0; pointer-events: none; overflow: hidden; }
+        .focus-exit-btn { padding: 5px 12px; border-radius: 6px; border: 1px solid ${t.border}; background: transparent; color: ${t.textMuted}; font-family: 'JetBrains Mono', monospace; font-size: 11px; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 5px; }
+        .focus-exit-btn:hover { color: ${t.text}; border-color: ${t.textMuted}; background: ${t.border}; }
         .nav-inner { width: 100%; display: grid; grid-template-columns: 1fr auto 1fr; padding: 0 40px; align-items: center; }
         .nav-logo { display: flex; align-items: center; gap: 8px; font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; letter-spacing: -0.5px; color: ${t.text}; }
         .nav-logo span { color: ${accent}; }
@@ -385,8 +478,11 @@ export default function CodeTyper() {
         .btn-nav:hover { color: ${t.text}; border-color: ${t.text}; }
         .btn-nav-accent { padding: 7px 14px; border-radius: 8px; border: none; background: ${accent}; color: #fff; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; transition: opacity 0.15s; }
         .btn-nav-accent:hover { opacity: 0.85; }
-        main { position: relative; z-index: 1; flex: 1; display: flex; flex-direction: column; align-items: center; padding: 48px 24px; gap: 24px; }
-        .controls { display: flex; align-items: center; gap: 8px; padding: 6px; background: ${t.surfaceAlt}; border: 1px solid ${t.border}; border-radius: 12px; }
+        main { position: relative; z-index: 1; flex: 1; display: flex; flex-direction: column; align-items: center; padding: 48px 24px; gap: 24px; transition: padding 0.4s cubic-bezier(0.4,0,0.2,1); }
+        main.focus-mode { padding: 12px 24px; justify-content: flex-start; gap: 12px; }
+        main.focus-mode .editor-body { max-height: 70vh; overflow-y: auto; }
+        .controls { display: flex; align-items: center; gap: 8px; padding: 6px; background: ${t.surfaceAlt}; border: 1px solid ${t.border}; border-radius: 12px; transition: all 0.4s cubic-bezier(0.4,0,0.2,1); max-height: 60px; overflow: hidden; opacity: 1; }
+        .controls.focus-hidden { display: none; }
         .ctrl-group { display: flex; gap: 4px; }
         .ctrl-btn { padding: 7px 14px; border-radius: 8px; border: none; background: transparent; color: ${t.textMuted}; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 6px; }
         .ctrl-btn:hover { color: ${t.text}; background: ${t.border}; }
@@ -418,7 +514,8 @@ export default function CodeTyper() {
         @keyframes spin { to { transform: rotate(360deg); } }
         .loading-text { font-family: 'JetBrains Mono', monospace; font-size: 12px; }
         .hint { font-size: 12px; color: ${t.textDim}; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.3px; text-align: center; }
-        .stats-bar { display: flex; gap: 8px; width: 100%; max-width: 1080px; }
+        .stats-bar { display: flex; gap: 8px; width: 100%; max-width: 1080px; transition: all 0.4s cubic-bezier(0.4,0,0.2,1); max-height: 100px; overflow: hidden; opacity: 1; }
+        .stats-bar.focus-hidden { display: none; }
         .stat-card { flex: 1; padding: 16px 20px; background: ${t.surface}; border: 1px solid ${t.border}; border-radius: 10px; display: flex; flex-direction: column; gap: 4px; }
         .stat-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: ${t.textMuted}; font-weight: 500; }
         .stat-value { font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 500; color: ${t.text}; line-height: 1; }
@@ -446,7 +543,11 @@ export default function CodeTyper() {
         .btn-secondary:hover { background: ${t.surfaceAlt}; color: ${t.text}; }
         .custom-input { width: 100%; padding: 16px; border-radius: 12px; border: 1px solid ${t.border}; background: ${t.surfaceAlt}; color: ${t.text}; font-family: ${fontFamily}; font-size: ${fontSize}px; outline: none; transition: border-color 0.15s; }
         .custom-input:focus { border-color: ${accent}; }
-        footer { position: relative; z-index: 1; border-top: 1px solid ${t.border}; padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; background: ${t.navBg}; backdrop-filter: blur(12px); }
+        footer { position: relative; z-index: 1; border-top: 1px solid ${t.border}; padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; background: ${t.navBg}; backdrop-filter: blur(12px); transition: all 0.4s cubic-bezier(0.4,0,0.2,1); overflow: hidden; max-height: 80px; opacity: 1; }
+        footer.focus-hidden { display: none; }
+        .focus-stats-bar { display: flex; align-items: center; gap: 20px; transition: all 0.3s ease; }
+        .focus-stat { display: flex; align-items: baseline; gap: 4px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: ${t.textMuted}; }
+        .focus-stat-value { font-weight: 600; color: ${t.text}; font-size: 13px; }
         .footer-left { display: flex; align-items: center; gap: 8px; font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; color: ${t.textDim}; }
         .footer-left span { color: ${accent}; }
         .footer-links { display: flex; gap: 20px; }
@@ -459,7 +560,7 @@ export default function CodeTyper() {
         <DynamicBackground wpm={finished ? 0 : wpm} accent={accent} />
         <div className="glow-orb" />
 
-        <nav>
+        <nav className={focusMode ? 'focus-hidden' : ''}>
           <div className="nav-inner">
             <div className="nav-logo">
             <img src="/logo.jpeg" alt="Codistic Logo" style={{ width: 26, height: 26, borderRadius: 4 }} />
@@ -535,8 +636,8 @@ export default function CodeTyper() {
           </div>
         </nav>
 
-        <main onClick={() => { setShowThemePicker(false); setShowUserMenu(false); }}>
-          <div className="controls">
+        <main className={focusMode ? 'focus-mode' : ''} onClick={() => { setShowThemePicker(false); setShowUserMenu(false); }}>
+          <div className={`controls ${focusMode ? 'focus-hidden' : ''}`}>
             <div className="ctrl-group">
               {LANGUAGES.map((lang) => (
                 <button key={lang} className={`ctrl-btn ${language === lang ? "active" : ""}`} onClick={() => setLanguage(lang)}>
@@ -562,19 +663,34 @@ export default function CodeTyper() {
               </button>
             )}          </div>
 
-          <div className="progress-bar-wrap">
+          <div className="progress-bar-wrap" style={focusMode ? { display: 'none' } : undefined}>
             <div className="progress-bar-fill" style={{ width: snippet ? `${(typed.length / snippet.code.length) * 100}%` : "0%", background: accent }} />
           </div>
 
-          <div className="editor-wrap">
+          <div className="editor-wrap" ref={editorWrapRef}>
             <div className="editor-header">
               <div className="editor-dots">
                 <div className="editor-dot" style={{ background: "#FF5F57" }} />
                 <div className="editor-dot" style={{ background: "#FEBC2E" }} />
                 <div className="editor-dot" style={{ background: "#28C840" }} />
               </div>
-              <span className="editor-filename">{snippet ? snippet.file : "loading..."}</span>
-              <span className="editor-source">{snippet ? snippet.source : ""}</span>
+              {started && !finished ? (
+                <div className="focus-stats-bar">
+                  <div className="focus-stat"><span className="focus-stat-value" style={{ color: accent }}>{wpm || 0}</span> wpm</div>
+                  <div className="focus-stat"><span className="focus-stat-value">{accuracy}%</span> acc</div>
+                  <div className="focus-stat"><span className="focus-stat-value">{elapsed}s</span> time</div>
+                  <div className="focus-stat"><span className="focus-stat-value">{snippet ? Math.round((typed.length / snippet.code.length) * 100) : 0}%</span> done</div>
+                </div>
+              ) : (
+                <span className="editor-filename">{snippet ? snippet.file : "loading..."}</span>
+              )}
+              <button className="focus-exit-btn" title="Ctrl + F" onClick={() => setFocusMode(f => !f)}>
+                {focusMode ? (
+                  <><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/></svg> exit focus</>
+                ) : (
+                  <><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg> focus mode</>
+                )}
+              </button>
             </div>
             <div className="editor-body">
               {loading ? (
@@ -607,7 +723,7 @@ export default function CodeTyper() {
             </div>
           </div>
 
-          <div className="stats-bar">
+          <div className={`stats-bar ${focusMode ? 'focus-hidden' : ''}`}>
             {[
               { label: "WPM", value: wpm || 0, unit: "words/min" },
               { label: "Accuracy", value: `${accuracy}`, unit: "percent" },
@@ -624,6 +740,20 @@ export default function CodeTyper() {
 
           {!started && !loading && <p className="hint">start typing to begin · tab for indentation</p>}
         </main>
+
+        {showKeyboard && !keyboardHidden && (
+          <div style={{ padding: '0 24px 24px', display: 'flex', justifyContent: 'center' }}>
+            <VirtualKeyboard
+              theme={t}
+              accent={accent}
+              nextChar={snippet && !finished && cursorPos < snippet.code.length ? snippet.code[cursorPos] : null}
+              lastKeyCorrect={lastKeyCorrect}
+              lastKeyTimestamp={lastKeyTimestamp}
+              compact={snippet && snippet.code.split('\n').length > 15}
+              onHide={() => setKeyboardHidden(true)}
+            />
+          </div>
+        )}
 
         {finished && (
           <div className="results-overlay">
@@ -663,7 +793,7 @@ export default function CodeTyper() {
               </div>
               <div className="results-actions">
                 <button className="btn-primary" onClick={loadSnippet}>Next Snippet</button>
-                <button className="btn-secondary" onClick={() => { setTyped(""); setStarted(false); setFinished(false); setWpm(0); setAccuracy(100); setElapsed(0); setCursorPos(0); }}>
+                <button className="btn-secondary" onClick={() => { setTyped(""); setStarted(false); setFinished(false); setFocusMode(false); setWpm(0); setAccuracy(100); setElapsed(0); setCursorPos(0); }}>
                   Retry
                 </button>
               </div>
@@ -697,7 +827,7 @@ export default function CodeTyper() {
           </div>
         )}
 
-        <footer>
+        <footer className={focusMode ? 'focus-hidden' : ''}>
           <div className="footer-left">
             <img src="/logo.jpeg" alt="Logo" style={{ width: 18, height: 18, borderRadius: 3 }} />
             <span>codi<span>stic</span></span>
