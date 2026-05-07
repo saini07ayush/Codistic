@@ -66,9 +66,14 @@ export default function CodeTyper() {
   const [tabSize, setTabSize] = useState(() => {
     return parseInt(localStorage.getItem("codistic-tabsize")) || 4;
   });
+  const [focusFullscreen, setFocusFullscreen] = useState(() => {
+    const stored = localStorage.getItem("codistic-focus-fullscreen");
+    return stored === null ? true : stored === "true";
+  });
 
   const timerRef = useRef(null);
   const editorWrapRef = useRef(null);
+  const hiddenInputRef = useRef(null);
   const isMono = themeName === "monochrome" || themeName === "monochromeLight";
   const theme = THEMES[themeName];
   const accent = isMono ? THEME_ACCENTS[themeName] : (LANG_COLORS[language] || THEME_ACCENTS[themeName]);
@@ -87,7 +92,9 @@ export default function CodeTyper() {
   const toggleFocusMode = (currentValue) => {
     const next = !currentValue;
     setFocusMode(next);
-    if (next) enterFullscreen(); else exitFullscreen();
+    if (focusFullscreen) {
+      if (next) enterFullscreen(); else exitFullscreen();
+    }
   };
   // Sync focusMode if user exits fullscreen natively (Escape key)
   useEffect(() => {
@@ -283,27 +290,13 @@ export default function CodeTyper() {
   }, [finished]);
 
   const handleKeyDown = useCallback((e) => {
-    // Global shortcuts (work anytime, not just during typing)
-    if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
-      e.preventDefault();
-      setFocusMode(f => { const next = !f; if (next) enterFullscreen(); else exitFullscreen(); return next; });
-      return;
-    }
-    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-      e.preventDefault();
-      setShowKeyboard(k => {
-        const newVal = !k;
-        localStorage.setItem("codistic-show-keyboard", String(newVal));
-        return newVal;
-      });
-      return;
-    }
     if (finished || !snippet || showAuth || showProfile || showThemePicker || showCustomModal || paused) return;
     if (e.key === "Tab") {
       e.preventDefault();
       if (!started) {
         setStarted(true); setStartTime(Date.now());
         setFocusMode(true);
+        if (focusFullscreen) enterFullscreen();
         setTimeout(() => {
           if (editorWrapRef.current) {
             const rect = editorWrapRef.current.getBoundingClientRect();
@@ -333,6 +326,7 @@ export default function CodeTyper() {
       if (!started) {
         setStarted(true); setStartTime(Date.now());
         setFocusMode(true);
+        if (focusFullscreen) enterFullscreen();
         setTimeout(() => {
           if (editorWrapRef.current) {
             const rect = editorWrapRef.current.getBoundingClientRect();
@@ -360,6 +354,7 @@ export default function CodeTyper() {
       if (!started) {
         setStarted(true); setStartTime(Date.now());
         setFocusMode(true);
+        if (focusFullscreen) enterFullscreen();
         setTimeout(() => {
           if (editorWrapRef.current) {
             const rect = editorWrapRef.current.getBoundingClientRect();
@@ -387,12 +382,63 @@ export default function CodeTyper() {
         setWpm(Math.round(words / timeTaken));
       }
     }
-  }, [typed, started, finished, snippet, startTime, showAuth, showProfile, showThemePicker, showCustomModal, paused, tabSize]);
+  }, [typed, started, finished, snippet, startTime, showAuth, showProfile, showThemePicker, showCustomModal, paused, tabSize, focusFullscreen]);
 
+  // Global handler only for shortcuts — typing is handled by the hidden textarea's onKeyDown
   useEffect(() => {
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [handleKeyDown]);
+    const globalShortcuts = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+        e.preventDefault();
+        setFocusMode(f => { const next = !f; if (focusFullscreen) { if (next) enterFullscreen(); else exitFullscreen(); } return next; });
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        setShowKeyboard(k => {
+          const newVal = !k;
+          localStorage.setItem("codistic-show-keyboard", String(newVal));
+          return newVal;
+        });
+        return;
+      }
+      // Escape: exit focus mode or close results
+      if (e.key === 'Escape') {
+        if (focusMode) {
+          e.preventDefault();
+          setFocusMode(false);
+          if (focusFullscreen) exitFullscreen();
+        }
+        return;
+      }
+      // Ctrl + R: reload snippet (new snippet)
+      if ((e.ctrlKey || e.metaKey) && e.key === 'r') {
+        e.preventDefault();
+        if (length === 'custom') setLength('short');
+        else loadSnippet();
+        return;
+      }
+      // Ctrl + P: pause / resume
+      if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+        e.preventDefault();
+        if (started && !finished) setPaused(p => !p);
+        return;
+      }
+      // If the hidden textarea is NOT focused, forward to handleKeyDown so typing still works
+      // even if user hasn't clicked the editor (desktop fallback)
+      if (document.activeElement !== hiddenInputRef.current) {
+        handleKeyDown(e);
+      }
+    };
+    window.addEventListener("keydown", globalShortcuts);
+    return () => window.removeEventListener("keydown", globalShortcuts);
+  }, [handleKeyDown, loadSnippet, length, started, finished, focusMode, focusFullscreen]);
+
+  // Auto-focus the hidden textarea whenever a new snippet loads
+  useEffect(() => {
+    if (snippet && hiddenInputRef.current) {
+      hiddenInputRef.current.focus();
+    }
+  }, [snippet]);
 
   useEffect(() => {
     const cursor = document.getElementById("typing-cursor");
@@ -469,6 +515,8 @@ export default function CodeTyper() {
       setShowKeyboard={(v) => { setShowKeyboard(v); localStorage.setItem("codistic-show-keyboard", String(v)); }}
       tabSize={tabSize}
       setTabSize={(v) => { setTabSize(v); localStorage.setItem("codistic-tabsize", String(v)); }}
+      focusFullscreen={focusFullscreen}
+      setFocusFullscreen={(v) => { setFocusFullscreen(v); localStorage.setItem("codistic-focus-fullscreen", String(v)); }}
     />
   );
   
@@ -536,7 +584,10 @@ export default function CodeTyper() {
         .editor-dot { width: 11px; height: 11px; border-radius: 50%; }
         .editor-filename { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: ${t.textMuted}; }
         .editor-source { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: ${t.textDim}; }
-        .editor-body { padding: 28px 32px; min-height: 280px; display: flex; align-items: flex-start; justify-content: flex-start; cursor: text; overflow-x: auto; width: 100%; }
+        .editor-body { padding: 28px 32px; min-height: 280px; display: flex; align-items: flex-start; justify-content: flex-start; cursor: text; overflow-x: auto; width: 100%; position: relative; }
+        .editor-body:focus-within .code-display { outline: none; }
+        .hidden-typer { position: absolute; opacity: 0; pointer-events: none; width: 1px; height: 1px; top: 0; left: 0; border: none; background: transparent; color: transparent; caret-color: transparent; resize: none; outline: none; overflow: hidden; font-size: 1px; padding: 0; margin: 0; z-index: -1; }
+        .editor-body.editor-focused { box-shadow: inset 0 0 0 2px ${accent}22; }
         .line-numbers { display: flex; flex-direction: column; align-items: flex-end; margin-right: 24px; user-select: none; flex-shrink: 0; }
         .line-num { font-family: ${fontFamily}; font-size: ${fontSize}px; line-height: 1.7; color: ${t.textDim}; min-width: 20px; text-align: right; }
         .code-display { font-family: ${fontFamily}; font-size: ${fontSize}px; line-height: 1.7; white-space: pre; flex: 1; min-width: 0; width: 100%; text-align: left; outline: none; tab-size: 4; display: block; }
@@ -731,7 +782,27 @@ export default function CodeTyper() {
                 )}
               </button>
             </div>
-            <div className="editor-body">
+            <div
+              className={`editor-body${started && !finished ? ' editor-focused' : ''}`}
+              onClick={() => {
+                if (hiddenInputRef.current) hiddenInputRef.current.focus();
+              }}
+            >
+              {/* Hidden textarea that captures real keyboard input */}
+              <textarea
+                ref={hiddenInputRef}
+                className="hidden-typer"
+                value=""
+                onChange={() => {}}
+                onKeyDown={handleKeyDown}
+                onFocus={() => {}}
+                tabIndex={0}
+                aria-label="Type here to practice"
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck={false}
+              />
               {loading ? (
                 <div className="loading-state">
                   <div className="spinner" />

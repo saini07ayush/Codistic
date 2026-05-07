@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 
 const KEYBOARD_ROWS = [
   [
@@ -141,9 +141,32 @@ export default function VirtualKeyboard({ theme, accent, nextChar, lastKeyCorrec
     return () => clearTimeout(flashTimerRef.current);
   }, [lastKeyTimestamp, lastKeyCorrect]);
 
-  // Drag handlers for compact mode
-  const handleDragStart = (e) => {
+  // Drag handlers for compact mode — using useCallback + refs to avoid stale closures
+  const handleDragMove = useCallback((e) => {
+    if (!dragState.current.dragging) return;
+    e.preventDefault();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    const dx = clientX - dragState.current.startX;
+    const dy = clientY - dragState.current.startY;
+    setDragPos({
+      x: dragState.current.origX + dx,
+      y: dragState.current.origY + dy,
+    });
+  }, []);
+
+  const handleDragEnd = useCallback(() => {
+    dragState.current.dragging = false;
+    document.removeEventListener('mousemove', handleDragMove);
+    document.removeEventListener('mouseup', handleDragEnd);
+    document.removeEventListener('touchmove', handleDragMove);
+    document.removeEventListener('touchend', handleDragEnd);
+  }, [handleDragMove]);
+
+  const handleDragStart = useCallback((e) => {
     if (!compact) return;
+    // Don't drag if clicking the hide button
+    if (e.target.closest('.vkb-hide-btn')) return;
     e.preventDefault();
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
@@ -161,28 +184,17 @@ export default function VirtualKeyboard({ theme, accent, nextChar, lastKeyCorrec
     document.addEventListener('mouseup', handleDragEnd);
     document.addEventListener('touchmove', handleDragMove, { passive: false });
     document.addEventListener('touchend', handleDragEnd);
-  };
+  }, [compact, handleDragMove, handleDragEnd]);
 
-  const handleDragMove = (e) => {
-    if (!dragState.current.dragging) return;
-    e.preventDefault();
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    const dx = clientX - dragState.current.startX;
-    const dy = clientY - dragState.current.startY;
-    setDragPos({
-      x: dragState.current.origX + dx,
-      y: dragState.current.origY + dy,
-    });
-  };
-
-  const handleDragEnd = () => {
-    dragState.current.dragging = false;
-    document.removeEventListener('mousemove', handleDragMove);
-    document.removeEventListener('mouseup', handleDragEnd);
-    document.removeEventListener('touchmove', handleDragMove);
-    document.removeEventListener('touchend', handleDragEnd);
-  };
+  // Cleanup drag listeners on unmount
+  useEffect(() => {
+    return () => {
+      document.removeEventListener('mousemove', handleDragMove);
+      document.removeEventListener('mouseup', handleDragEnd);
+      document.removeEventListener('touchmove', handleDragMove);
+      document.removeEventListener('touchend', handleDragEnd);
+    };
+  }, [handleDragMove, handleDragEnd]);
 
   // Determine which keys should be highlighted as "next to press"
   const nextKeys = nextChar != null ? getKeysForChar(nextChar) : [];
@@ -392,15 +404,17 @@ export default function VirtualKeyboard({ theme, accent, nextChar, lastKeyCorrec
         }
       `}</style>
       <div
-
         ref={containerRef}
         className={`vkb-container ${compact ? 'vkb-compact' : ''}`}
+        onMouseDown={compact ? handleDragStart : undefined}
+        onTouchStart={compact ? handleDragStart : undefined}
         style={compact && dragPos ? {
           left: dragPos.x,
           top: dragPos.y,
           right: 'auto',
           bottom: 'auto',
-        } : undefined}
+          cursor: 'grab',
+        } : compact ? { cursor: 'grab' } : undefined}
       >
         <button className="vkb-hide-btn" title="Ctrl + K" onClick={onHide}>
           <svg width={compact || small ? 11 : 13} height={compact || small ? 11 : 13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

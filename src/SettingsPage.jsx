@@ -25,11 +25,12 @@ const TABS = [
 
 const SHORTCUTS = [
   { keys: "Any Key", desc: "Start typing to begin the session" },
-  { keys: "Tab", desc: "Insert indentation (configurable spaces)" },
-  { keys: "Enter", desc: "Insert newline character" },
   { keys: "Backspace", desc: "Delete the last typed character" },
   { keys: "Ctrl + F", desc: "Toggle focus mode (during typing)" },
   { keys: "Ctrl + K", desc: "Show / hide the virtual keyboard" },
+  { keys: "Ctrl + R", desc: "Load a new snippet (reload)" },
+  { keys: "Ctrl + P", desc: "Pause / resume the current session" },
+  { keys: "Escape", desc: "Exit focus mode" },
 ];
 
 export default function SettingsPage({ 
@@ -38,7 +39,8 @@ export default function SettingsPage({
   fontSize, setFontSize,
   themeName, setThemeName,
   showKeyboard, setShowKeyboard,
-  tabSize, setTabSize
+  tabSize, setTabSize,
+  focusFullscreen, setFocusFullscreen
 }) {
   const t = theme;
   const [activeTab, setActiveTab] = useState("account");
@@ -496,6 +498,21 @@ export default function SettingsPage({
                       <button 
                         className={`toggle-switch ${showKeyboard ? 'on' : 'off'}`}
                         onClick={() => setShowKeyboard(!showKeyboard)}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="settings-field">
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div>
+                        <span className="settings-label">Fullscreen in Focus Mode</span>
+                        <div style={{ fontSize: 12, color: t.textMuted, marginTop: 2 }}>
+                          Automatically enter fullscreen when focus mode activates. When off, focus mode hides UI elements but stays windowed.
+                        </div>
+                      </div>
+                      <button 
+                        className={`toggle-switch ${focusFullscreen ? 'on' : 'off'}`}
+                        onClick={() => setFocusFullscreen(!focusFullscreen)}
                       />
                     </div>
                   </div>
