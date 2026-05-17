@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { updateProfile } from "firebase/auth";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { storage } from "./firebase";
@@ -40,10 +40,32 @@ export default function SettingsPage({
   themeName, setThemeName,
   showKeyboard, setShowKeyboard,
   tabSize, setTabSize,
-  focusFullscreen, setFocusFullscreen
+  focusFullscreen, setFocusFullscreen,
+  deepLink
 }) {
   const t = theme;
-  const [activeTab, setActiveTab] = useState("account");
+  const [activeTab, setActiveTab] = useState(deepLink === 'customTheme' ? 'appearance' : 'account');
+  const customThemeMakerRef = useRef(null);
+
+  // Deep-link: scroll to custom theme maker when arriving via dropdown
+  useEffect(() => {
+    if (deepLink === 'customTheme' && activeTab === 'appearance') {
+      // Small delay to let DOM render the appearance tab content
+      const timer = setTimeout(() => {
+        if (customThemeMakerRef.current) {
+          customThemeMakerRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // Brief highlight flash
+          customThemeMakerRef.current.style.boxShadow = `0 0 0 2px ${accent}, 0 10px 40px -10px rgba(0,0,0,0.2)`;
+          setTimeout(() => {
+            if (customThemeMakerRef.current) {
+              customThemeMakerRef.current.style.boxShadow = '0 10px 40px -10px rgba(0,0,0,0.2)';
+            }
+          }, 1500);
+        }
+      }, 150);
+      return () => clearTimeout(timer);
+    }
+  }, [deepLink, activeTab, accent]);
   
   // --- Local draft state (nothing applies until Save) ---
   const [draftName, setDraftName] = useState(user.displayName || user.email?.split('@')[0] || "");
@@ -719,7 +741,7 @@ export default function SettingsPage({
                 </div>
 
                 {/* Custom Theme Maker */}
-                <div className="settings-card">
+                <div className="settings-card" ref={customThemeMakerRef} style={{ transition: 'box-shadow 0.5s ease' }}>
                   <div className="settings-card-title">Custom Theme Maker</div>
                   <div style={{ fontSize: 13, color: t.textMuted, lineHeight: 1.6 }}>
                     Create your own theme by picking 6 colors. All other UI colors are automatically derived.

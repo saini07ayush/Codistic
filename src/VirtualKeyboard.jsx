@@ -90,6 +90,40 @@ export default function VirtualKeyboard({ theme, accent, nextChar, lastKeyCorrec
   const containerRef = useRef(null);
   const dragState = useRef({ dragging: false, startX: 0, startY: 0, origX: 0, origY: 0 });
   const [dragPos, setDragPos] = useState(null); // { x, y } or null for default CSS position
+  const [scale, setScale] = useState(() => {
+    const stored = localStorage.getItem('codistic-kb-scale');
+    return stored ? parseFloat(stored) : 1;
+  });
+  const resizeState = useRef({ resizing: false, startX: 0, startScale: 1 });
+
+  const handleResizeMove = useCallback((e) => {
+    if (!resizeState.current.resizing) return;
+    e.preventDefault();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const dx = clientX - resizeState.current.startX;
+    const newScale = Math.max(0.5, Math.min(1.5, +(resizeState.current.startScale + dx / 400).toFixed(2)));
+    setScale(newScale);
+    localStorage.setItem('codistic-kb-scale', String(newScale));
+  }, []);
+
+  const handleResizeEnd = useCallback(() => {
+    resizeState.current.resizing = false;
+    document.removeEventListener('mousemove', handleResizeMove);
+    document.removeEventListener('mouseup', handleResizeEnd);
+    document.removeEventListener('touchmove', handleResizeMove);
+    document.removeEventListener('touchend', handleResizeEnd);
+  }, [handleResizeMove]);
+
+  const handleResizeStart = useCallback((e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    resizeState.current = { resizing: true, startX: clientX, startScale: scale };
+    document.addEventListener('mousemove', handleResizeMove);
+    document.addEventListener('mouseup', handleResizeEnd);
+    document.addEventListener('touchmove', handleResizeMove, { passive: false });
+    document.addEventListener('touchend', handleResizeEnd);
+  }, [scale, handleResizeMove, handleResizeEnd]);
 
   // Track physically pressed keys for highlight
   useEffect(() => {
@@ -316,14 +350,37 @@ export default function VirtualKeyboard({ theme, accent, nextChar, lastKeyCorrec
         .vkb-container:hover .vkb-drag-dots {
           opacity: 0.6;
         }
+        .vkb-resize-handle {
+          position: absolute;
+          bottom: 2px;
+          right: 2px;
+          width: 16px;
+          height: 16px;
+          cursor: nwse-resize;
+          z-index: 3;
+          opacity: 0.25;
+          transition: opacity 0.15s;
+          display: flex;
+          align-items: flex-end;
+          justify-content: flex-end;
+        }
+        .vkb-container:hover .vkb-resize-handle {
+          opacity: 0.6;
+        }
+        .vkb-resize-handle:hover {
+          opacity: 1 !important;
+        }
+        .vkb-resize-handle svg {
+          display: block;
+        }
         @keyframes vkb-slideIn {
           from { transform: translateY(20px) scale(0.95); opacity: 0; }
           to { transform: translateY(0) scale(1); opacity: 1; }
         }
         .vkb-hide-btn {
           position: absolute;
-          top: 5px;
-          right: 5px;
+          bottom: 5px;
+          left: 5px;
           z-index: 2;
           padding: 3px 4px;
           border-radius: 4px;
@@ -431,29 +488,65 @@ export default function VirtualKeyboard({ theme, accent, nextChar, lastKeyCorrec
           border-radius: ${compact ? '4px' : '7px'};
         }
       `}</style>
-      <div
-        ref={containerRef}
-        className={`vkb-container ${compact ? 'vkb-compact' : ''} ${dragPos ? 'vkb-dragged' : ''}`}
-        onMouseDown={handleDragStart}
-        onTouchStart={handleDragStart}
-        style={dragPos ? {
-          left: dragPos.x,
-          top: dragPos.y,
-          right: 'auto',
-          bottom: 'auto',
-        } : undefined}
-      >
-        <div className="vkb-drag-handle">
-          <div className="vkb-drag-dots" />
+      {/* Wrapper adjusts layout height to match scaled keyboard */}
+      {!dragPos ? (
+        <div
+          ref={containerRef}
+          className={`vkb-container ${compact ? 'vkb-compact' : ''}`}
+          onMouseDown={handleDragStart}
+          onTouchStart={handleDragStart}
+          style={{ zoom: scale }}
+        >
+          <div className="vkb-drag-handle">
+            <div className="vkb-drag-dots" />
+          </div>
+          <div className="vkb-resize-handle" onMouseDown={handleResizeStart} onTouchStart={handleResizeStart}>
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke={t.textDim} strokeWidth="1.5">
+              <line x1="9" y1="1" x2="1" y2="9" />
+              <line x1="9" y1="5" x2="5" y2="9" />
+            </svg>
+          </div>
+          {renderRows(KEYBOARD_ROWS)}
+          <button className="vkb-hide-btn" title="Ctrl + K" onClick={onHide}>
+            <svg width={compact || small ? 11 : 13} height={compact || small ? 11 : 13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+              <line x1="1" y1="1" x2="23" y2="23" />
+            </svg>
+          </button>
         </div>
-        <button className="vkb-hide-btn" title="Ctrl + K" onClick={onHide}>
-          <svg width={compact || small ? 11 : 13} height={compact || small ? 11 : 13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
-            <line x1="1" y1="1" x2="23" y2="23" />
-          </svg>
-        </button>
-        {renderRows(KEYBOARD_ROWS)}
-      </div>
+      ) : (
+        <div
+          ref={containerRef}
+          className={`vkb-container ${compact ? 'vkb-compact' : ''} vkb-dragged`}
+          onMouseDown={handleDragStart}
+          onTouchStart={handleDragStart}
+          style={{
+            left: dragPos.x,
+            top: dragPos.y,
+            right: 'auto',
+            bottom: 'auto',
+            transform: `scale(${scale})`,
+            transformOrigin: 'top left',
+          }}
+        >
+          <div className="vkb-drag-handle">
+            <div className="vkb-drag-dots" />
+          </div>
+          <div className="vkb-resize-handle" onMouseDown={handleResizeStart} onTouchStart={handleResizeStart}>
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke={t.textDim} strokeWidth="1.5">
+              <line x1="9" y1="1" x2="1" y2="9" />
+              <line x1="9" y1="5" x2="5" y2="9" />
+            </svg>
+          </div>
+          {renderRows(KEYBOARD_ROWS)}
+          <button className="vkb-hide-btn" title="Ctrl + K" onClick={onHide}>
+            <svg width={compact || small ? 11 : 13} height={compact || small ? 11 : 13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+              <line x1="1" y1="1" x2="23" y2="23" />
+            </svg>
+          </button>
+        </div>
+      )}
     </>
   );
 }

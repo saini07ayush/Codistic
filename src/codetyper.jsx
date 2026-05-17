@@ -3,7 +3,7 @@ import { onAuthStateChanged, signOut } from "firebase/auth";
 import { collection, addDoc, serverTimestamp, query, orderBy, limit, getDocs } from "firebase/firestore";
 import { auth, db } from "./firebase";
 import { getSnippet } from "./services/githubSnippets";
-import { THEMES, THEME_ACCENTS } from "./themes";
+import { THEMES, THEME_ACCENTS, loadCustomTheme } from "./themes";
 import AuthPage from "./AuthPage";
 import ProfilePage from "./ProfilePage";
 import SettingsPage from "./SettingsPage";
@@ -53,6 +53,7 @@ export default function CodeTyper() {
   const [showAuth, setShowAuth] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [settingsDeepLink, setSettingsDeepLink] = useState(null);
   const [showCustomModal, setShowCustomModal] = useState(false);
   const [customText, setCustomText] = useState("");
   const [lastKeyCorrect, setLastKeyCorrect] = useState(true);
@@ -331,6 +332,8 @@ export default function CodeTyper() {
 
   const handleKeyDown = useCallback((e) => {
     if (finished || !snippet || showAuth || showProfile || showThemePicker || showCustomModal || paused) return;
+    // Don't process shortcuts as typed characters
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
     if (e.key === "Tab") {
       e.preventDefault();
       if (!started) {
@@ -544,7 +547,8 @@ export default function CodeTyper() {
       user={user} 
       theme={t} 
       accent={accent} 
-      onBack={() => setShowSettings(false)} 
+      onBack={() => { setShowSettings(false); setSettingsDeepLink(null); }} 
+      deepLink={settingsDeepLink}
       fontFamily={fontFamily}
       setFontFamily={setFontFamily}
       fontSize={fontSize}
@@ -580,7 +584,6 @@ export default function CodeTyper() {
         body { background: ${t.bg}; color: ${t.text}; font-family: 'DM Sans', sans-serif; min-height: 100vh; }
         .app { min-height: 100vh; display: flex; flex-direction: column; background: ${t.bg}; position: relative; }
         .app::before { display: none; }
-        .glow-orb { position: fixed; width: 600px; height: 600px; border-radius: 50%; filter: blur(120px); opacity: 0.06; pointer-events: none; z-index: 0; background: ${accent}; top: -200px; left: 20%; transition: background 0.6s; }
         nav { position: relative; z-index: 10; display: flex; align-items: center; justify-content: center; height: 64px; border-bottom: 1px solid ${t.border}; backdrop-filter: blur(12px); background: ${t.navBg}; transition: all 0.4s cubic-bezier(0.4,0,0.2,1); }
         nav.focus-hidden { height: 0; border-bottom-color: transparent; opacity: 0; pointer-events: none; overflow: hidden; }
         .focus-exit-btn { padding: 5px 12px; border-radius: 6px; border: 1px solid ${t.border}; background: transparent; color: ${t.textMuted}; font-family: 'JetBrains Mono', monospace; font-size: 11px; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 5px; }
@@ -648,11 +651,20 @@ export default function CodeTyper() {
         .stat-value { font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 500; color: ${t.text}; line-height: 1; }
         .stat-unit { font-size: 11px; color: ${t.textMuted}; }
         .theme-picker-wrap { position: relative; }
-        .theme-picker-dropdown { position: absolute; top: calc(100% + 8px); right: 0; background: ${t.surface}; border: 1px solid ${t.border}; border-radius: 12px; padding: 8px; display: flex; flex-direction: column; gap: 2px; min-width: 160px; z-index: 100; box-shadow: 0 12px 40px rgba(0,0,0,0.3); }
-        .theme-option { padding: 8px 12px; border-radius: 8px; border: none; background: transparent; color: ${t.textMuted}; font-family: 'DM Sans', sans-serif; font-size: 13px; cursor: pointer; transition: all 0.1s; text-align: left; display: flex; align-items: center; gap: 10px; }
+        .theme-picker-dropdown { position: absolute; top: calc(100% + 8px); right: 0; background: ${t.surface}; border: 1px solid ${t.border}; border-radius: 12px; padding: 8px; display: flex; flex-direction: column; gap: 2px; min-width: 190px; z-index: 100; box-shadow: 0 12px 40px rgba(0,0,0,0.3); animation: themeDropIn 0.18s cubic-bezier(0.16,1,0.3,1); }
+        @keyframes themeDropIn { from { opacity: 0; transform: translateY(-6px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        .theme-option { padding: 8px 12px; border-radius: 8px; border: none; background: transparent; color: ${t.textMuted}; font-family: 'DM Sans', sans-serif; font-size: 13px; cursor: pointer; transition: all 0.12s ease; text-align: left; display: flex; align-items: center; gap: 10px; width: 100%; }
         .theme-option:hover { background: ${t.surfaceAlt}; color: ${t.text}; }
         .theme-option.active { color: ${t.text}; background: ${t.surfaceAlt}; }
-        .theme-swatch { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+        .theme-swatch { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; border: 1px solid ${t.border}; }
+        .theme-dropdown-divider { height: 1px; background: ${t.border}; margin: 4px 8px; flex-shrink: 0; }
+        .theme-dropdown-label { padding: 6px 12px 4px; font-size: 10px; text-transform: uppercase; letter-spacing: 1.2px; color: ${t.textDim}; font-family: 'JetBrains Mono', monospace; font-weight: 500; user-select: none; }
+        .theme-custom-swatch { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; border: 1.5px solid ${t.border}; }
+        .theme-option .theme-edit-icon { margin-left: auto; opacity: 0; transition: opacity 0.15s; display: flex; align-items: center; }
+        .theme-option:hover .theme-edit-icon { opacity: 0.7; }
+        .theme-create-btn { padding: 8px 12px; border-radius: 8px; border: 1px dashed ${t.border}; background: transparent; color: ${t.textDim}; font-family: 'DM Sans', sans-serif; font-size: 12px; cursor: pointer; transition: all 0.15s ease; text-align: left; display: flex; align-items: center; gap: 8px; width: 100%; margin-top: 2px; }
+        .theme-create-btn:hover { border-color: ${accent}; color: ${accent}; background: ${accent}08; }
+        .btn-nav-themed { position: relative; overflow: hidden; }
         .results-overlay { position: fixed; inset: 0; background: ${t.overlay}; backdrop-filter: blur(16px); z-index: 100; display: flex; align-items: center; justify-content: center; animation: fadeIn 0.3s ease; }
         @keyframes fadeIn { from{opacity:0} to{opacity:1} }
         .results-card { background: ${t.surface}; border: 1px solid ${t.border}; border-radius: 20px; padding: 48px; width: 480px; display: flex; flex-direction: column; gap: 32px; animation: slideUp 0.35s cubic-bezier(0.16,1,0.3,1); }
@@ -685,7 +697,6 @@ export default function CodeTyper() {
 
       <div className={`app${focusMode ? ' focus-active' : ''}`}>
         <DynamicBackground wpm={finished ? 0 : wpm} accent={accent} />
-        <div className="glow-orb" />
 
         <nav className={focusMode ? 'focus-hidden' : ''}>
           <div className="nav-inner">
@@ -709,19 +720,61 @@ export default function CodeTyper() {
           </div>
           <div className="nav-right">
               <div className="theme-picker-wrap">
-                <button className="btn-nav" onClick={() => setShowThemePicker((p) => !p)}>Theme</button>
+                <button className="btn-nav btn-nav-themed" onClick={() => setShowThemePicker((p) => !p)} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ width: 10, height: 10, borderRadius: '50%', background: (themeName === 'monochrome' || themeName === 'monochromeLight') ? '#888888' : (THEME_ACCENTS[themeName] || accent), flexShrink: 0, border: `1px solid ${t.border}` }} />
+                  {THEMES[themeName]?.name || 'Theme'}
+                  <span style={{ fontSize: 9, opacity: 0.5, marginLeft: 2 }}>▼</span>
+                </button>
                 {showThemePicker && (
                   <div className="theme-picker-dropdown">
-                    {Object.entries(THEMES).map(([key, val]) => (
+                    <div className="theme-dropdown-label">Built-in</div>
+                    {Object.entries(THEMES).filter(([key]) => key !== 'custom').map(([key, val]) => (
                       <button
                         key={key}
                         className={`theme-option ${themeName === key ? "active" : ""}`}
                         onClick={() => { setThemeName(key); setShowThemePicker(false); }}
                       >
-                        <div className="theme-swatch" style={{ background: THEME_ACCENTS[key] }} />
+                        <div className="theme-swatch" style={{ background: key === 'monochrome' ? '#888888' : key === 'monochromeLight' ? '#888888' : THEME_ACCENTS[key] }} />
                         {val.name}
+                        {themeName === key && (
+                          <span style={{ marginLeft: 'auto', fontSize: 11, color: accent }}>✓</span>
+                        )}
                       </button>
                     ))}
+                    <div className="theme-dropdown-divider" />
+                    <div className="theme-dropdown-label">Custom</div>
+                    {THEMES.custom ? (
+                      <button
+                        className={`theme-option ${themeName === 'custom' ? "active" : ""}`}
+                        onClick={() => { setThemeName('custom'); setShowThemePicker(false); }}
+                      >
+                        <div
+                          className="theme-custom-swatch"
+                          style={{
+                            background: `conic-gradient(${loadCustomTheme()?.bg || '#0a0a0a'}, ${loadCustomTheme()?.accent || '#3B82F6'}, ${loadCustomTheme()?.correct || '#e2e8f0'}, ${loadCustomTheme()?.wrong || '#fc8181'}, ${loadCustomTheme()?.bg || '#0a0a0a'})`,
+                          }}
+                        />
+                        Custom
+                        {themeName === 'custom' && (
+                          <span style={{ marginLeft: 'auto', fontSize: 11, color: accent }}>✓</span>
+                        )}
+                        <span
+                          className="theme-edit-icon"
+                          title="Edit in Settings"
+                          onClick={(e) => { e.stopPropagation(); setShowThemePicker(false); setSettingsDeepLink('customTheme'); setShowSettings(true); }}
+                        >
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        </span>
+                      </button>
+                    ) : (
+                      <button
+                        className="theme-create-btn"
+                        onClick={() => { setShowThemePicker(false); if (user) { setSettingsDeepLink('customTheme'); setShowSettings(true); } else setShowAuth(true); }}
+                      >
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>
+                        Create Custom Theme
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
