@@ -164,7 +164,6 @@ export default function VirtualKeyboard({ theme, accent, nextChar, lastKeyCorrec
   }, [handleDragMove]);
 
   const handleDragStart = useCallback((e) => {
-    if (!compact) return;
     // Don't drag if clicking the hide button
     if (e.target.closest('.vkb-hide-btn')) return;
     e.preventDefault();
@@ -184,7 +183,7 @@ export default function VirtualKeyboard({ theme, accent, nextChar, lastKeyCorrec
     document.addEventListener('mouseup', handleDragEnd);
     document.addEventListener('touchmove', handleDragMove, { passive: false });
     document.addEventListener('touchend', handleDragEnd);
-  }, [compact, handleDragMove, handleDragEnd]);
+  }, [handleDragMove, handleDragEnd]);
 
   // Cleanup drag listeners on unmount
   useEffect(() => {
@@ -279,14 +278,43 @@ export default function VirtualKeyboard({ theme, accent, nextChar, lastKeyCorrec
           user-select: none;
           box-shadow: 0 8px 32px rgba(0,0,0,0.2);
           position: relative;
+          z-index: 50;
+          cursor: grab;
+        }
+        .vkb-container:active {
+          cursor: grabbing;
         }
         .vkb-container.vkb-compact {
           position: fixed;
           bottom: 20px;
           right: 20px;
-          z-index: 50;
           width: auto;
           animation: vkb-slideIn 0.3s cubic-bezier(0.16,1,0.3,1);
+        }
+        .vkb-container.vkb-dragged {
+          position: fixed;
+          z-index: 9999;
+        }
+        .vkb-drag-handle {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 2px 0 0;
+          cursor: grab;
+        }
+        .vkb-drag-handle:active {
+          cursor: grabbing;
+        }
+        .vkb-drag-dots {
+          width: 32px;
+          height: 4px;
+          border-radius: 2px;
+          background: ${t.textDim};
+          opacity: 0.3;
+          transition: opacity 0.15s;
+        }
+        .vkb-container:hover .vkb-drag-dots {
+          opacity: 0.6;
         }
         @keyframes vkb-slideIn {
           from { transform: translateY(20px) scale(0.95); opacity: 0; }
@@ -405,17 +433,19 @@ export default function VirtualKeyboard({ theme, accent, nextChar, lastKeyCorrec
       `}</style>
       <div
         ref={containerRef}
-        className={`vkb-container ${compact ? 'vkb-compact' : ''}`}
-        onMouseDown={compact ? handleDragStart : undefined}
-        onTouchStart={compact ? handleDragStart : undefined}
-        style={compact && dragPos ? {
+        className={`vkb-container ${compact ? 'vkb-compact' : ''} ${dragPos ? 'vkb-dragged' : ''}`}
+        onMouseDown={handleDragStart}
+        onTouchStart={handleDragStart}
+        style={dragPos ? {
           left: dragPos.x,
           top: dragPos.y,
           right: 'auto',
           bottom: 'auto',
-          cursor: 'grab',
-        } : compact ? { cursor: 'grab' } : undefined}
+        } : undefined}
       >
+        <div className="vkb-drag-handle">
+          <div className="vkb-drag-dots" />
+        </div>
         <button className="vkb-hide-btn" title="Ctrl + K" onClick={onHide}>
           <svg width={compact || small ? 11 : 13} height={compact || small ? 11 : 13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />

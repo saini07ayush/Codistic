@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp, query, orderBy, limit, getDocs } from "firebase/firestore";
 import { auth, db } from "./firebase";
 import { getSnippet } from "./services/githubSnippets";
 import { THEMES, THEME_ACCENTS } from "./themes";
@@ -70,6 +70,7 @@ export default function CodeTyper() {
     const stored = localStorage.getItem("codistic-focus-fullscreen");
     return stored === null ? true : stored === "true";
   });
+  const [avgStats, setAvgStats] = useState({ wpm: 0, accuracy: 0, sessions: 0 });
 
   const timerRef = useRef(null);
   const editorWrapRef = useRef(null);
@@ -288,6 +289,45 @@ export default function CodeTyper() {
       }).catch(console.error);
     }
   }, [finished]);
+
+  // Fetch average stats from Firestore
+  const fetchAvgStats = useCallback(async (uid) => {
+    try {
+      const q = query(
+        collection(db, "users", uid, "sessions"),
+        orderBy("timestamp", "desc"),
+        limit(50)
+      );
+      const snap = await getDocs(q);
+      if (snap.empty) return;
+      let totalWpm = 0, totalAcc = 0, count = 0;
+      snap.docs.forEach(d => {
+        const s = d.data();
+        totalWpm += s.wpm || 0;
+        totalAcc += s.accuracy || 0;
+        count++;
+      });
+      setAvgStats({
+        wpm: Math.round(totalWpm / count),
+        accuracy: Math.round(totalAcc / count),
+        sessions: count,
+      });
+    } catch (e) { console.error("Avg stats fetch error:", e); }
+  }, []);
+
+  // Fetch on login
+  useEffect(() => {
+    if (user) fetchAvgStats(user.uid);
+  }, [user, fetchAvgStats]);
+
+  // Re-fetch after session completes
+  useEffect(() => {
+    if (finished && user) {
+      // small delay so the addDoc has time to write
+      const timer = setTimeout(() => fetchAvgStats(user.uid), 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [finished, user, fetchAvgStats]);
 
   const handleKeyDown = useCallback((e) => {
     if (finished || !snippet || showAuth || showProfile || showThemePicker || showCustomModal || paused) return;
@@ -655,16 +695,16 @@ export default function CodeTyper() {
           </div>
           <div className="nav-center">
             <div className="nav-stat">
-              <span className="nav-stat-label">WPM</span>
-              <span className="nav-stat-value" style={{ color: started ? accent : t.textMuted }}>{started ? wpm || "-" : "-"}</span>
+              <span className="nav-stat-label">{started ? 'WPM' : 'AVG WPM'}</span>
+              <span className="nav-stat-value" style={{ color: started ? accent : t.textMuted }}>{started ? wpm || "-" : (user && avgStats.sessions > 0 ? avgStats.wpm : "-")}</span>
             </div>
             <div className="nav-stat">
-              <span className="nav-stat-label">Accuracy</span>
-              <span className="nav-stat-value">{started ? `${accuracy}%` : "-"}</span>
+              <span className="nav-stat-label">{started ? 'Accuracy' : 'AVG ACC'}</span>
+              <span className="nav-stat-value">{started ? `${accuracy}%` : (user && avgStats.sessions > 0 ? `${avgStats.accuracy}%` : "-")}</span>
             </div>
             <div className="nav-stat">
-              <span className="nav-stat-label">Time</span>
-              <span className="nav-stat-value">{started ? `${elapsed}s` : "-"}</span>
+              <span className="nav-stat-label">{started ? 'Time' : 'Sessions'}</span>
+              <span className="nav-stat-value">{started ? `${elapsed}s` : (user && avgStats.sessions > 0 ? avgStats.sessions : "-")}</span>
             </div>
           </div>
           <div className="nav-right">

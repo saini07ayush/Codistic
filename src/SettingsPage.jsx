@@ -2,7 +2,7 @@ import { useState } from "react";
 import { updateProfile } from "firebase/auth";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { storage } from "./firebase";
-import { THEMES, THEME_ACCENTS } from "./themes";
+import { THEMES, THEME_ACCENTS, CUSTOM_THEME_FIELDS, buildThemeFromColors, loadCustomTheme, saveCustomTheme } from "./themes";
 
 // SVG Icon components
 const Icons = {
@@ -56,6 +56,17 @@ export default function SettingsPage({
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
+  // --- Custom Theme Maker State ---
+  const existingCustom = loadCustomTheme();
+  const defaultCustomColors = {
+    bg: "#0a0a0a", surface: "#111111", text: "#e2e8f0",
+    accent: "#3B82F6", correct: "#e2e8f0", wrong: "#fc8181",
+  };
+  const [customColors, setCustomColors] = useState(existingCustom || defaultCustomColors);
+  const [customBaseTheme, setCustomBaseTheme] = useState("");
+  const [customSaved, setCustomSaved] = useState(false);
+  const customPreviewTheme = buildThemeFromColors(customColors);
+
   const handleSaveAll = async () => {
     setLoading(true);
     setMessage("");
@@ -97,11 +108,13 @@ export default function SettingsPage({
       <style>{`
         .settings-wrap {
           min-height: 100vh;
+          height: 100vh;
           background: ${t.bg};
           font-family: 'DM Sans', sans-serif;
           color: ${t.text};
           display: flex;
           flex-direction: column;
+          overflow: hidden;
         }
         
         .settings-nav {
@@ -130,6 +143,8 @@ export default function SettingsPage({
           margin: 0 auto;
           padding: 40px;
           gap: 32px;
+          overflow: hidden;
+          min-height: 0;
         }
 
         /* Sidebar */
@@ -166,6 +181,22 @@ export default function SettingsPage({
           display: flex;
           flex-direction: column;
           gap: 24px;
+          overflow-y: auto;
+          min-height: 0;
+          padding-right: 8px;
+        }
+        .settings-content::-webkit-scrollbar {
+          width: 6px;
+        }
+        .settings-content::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .settings-content::-webkit-scrollbar-thumb {
+          background: ${t.border};
+          border-radius: 3px;
+        }
+        .settings-content::-webkit-scrollbar-thumb:hover {
+          background: ${t.textDim};
         }
         
         .settings-card {
@@ -355,11 +386,102 @@ export default function SettingsPage({
         .toggle-switch.on::after { transform: translateX(20px); }
         .toggle-switch.off { background: ${t.border}; }
         .toggle-switch.off::after { transform: translateX(0); }
+
+        /* Custom Theme Maker */
+        .ctm-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 12px;
+        }
+        .ctm-field {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 12px 14px;
+          border-radius: 10px;
+          background: ${t.surfaceAlt};
+          border: 1px solid ${t.border};
+          transition: border-color 0.15s;
+        }
+        .ctm-field:hover {
+          border-color: ${accent}40;
+        }
+        .ctm-color-input {
+          -webkit-appearance: none;
+          appearance: none;
+          width: 40px;
+          height: 40px;
+          border: 2px solid ${t.border};
+          border-radius: 12px;
+          cursor: pointer;
+          padding: 0;
+          background: #050505;
+          flex-shrink: 0;
+          overflow: hidden;
+        }
+        .ctm-color-input::-webkit-color-swatch-wrapper {
+          padding: 3px;
+        }
+        .ctm-color-input::-webkit-color-swatch {
+          border: none;
+          border-radius: 8px;
+        }
+        .ctm-color-input::-moz-color-swatch {
+          border: none;
+          border-radius: 8px;
+        }
+        .ctm-field-info {
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+          flex: 1;
+          min-width: 0;
+        }
+        .ctm-field-label {
+          font-size: 13px;
+          font-weight: 600;
+          color: ${t.text};
+        }
+        .ctm-field-desc {
+          font-size: 11px;
+          color: ${t.textMuted};
+        }
+        .ctm-field-hex {
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 11px;
+          color: ${t.text};
+          text-transform: uppercase;
+          background: #050505;
+          border: 1px solid ${t.border};
+          border-radius: 8px;
+          padding: 6px 10px;
+          width: 80px;
+          text-align: center;
+          outline: none;
+          transition: border-color 0.15s;
+          flex-shrink: 0;
+        }
+        .ctm-field-hex:focus {
+          border-color: ${accent};
+        }
+        .ctm-saved-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 6px 14px;
+          border-radius: 8px;
+          background: ${accent}15;
+          border: 1px solid ${accent}30;
+          color: ${accent};
+          font-size: 12px;
+          font-family: 'JetBrains Mono', monospace;
+          animation: fadeIn 0.3s ease;
+        }
       `}</style>
 
       <div className="settings-wrap">
         <nav className="settings-nav">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }} onClick={onBack}>
             <img src="/logo.jpeg" alt="Codistic Logo" style={{ width: 28, height: 28, borderRadius: 5 }} />
             <div className="settings-title">codi<span style={{ color: accent }}>stic</span> <span style={{ color: t.textDim, fontWeight: 500 }}>/ Settings</span></div>
           </div>
@@ -593,6 +715,150 @@ export default function SettingsPage({
     print(message)
     return message`}
                     </pre>
+                  </div>
+                </div>
+
+                {/* Custom Theme Maker */}
+                <div className="settings-card">
+                  <div className="settings-card-title">Custom Theme Maker</div>
+                  <div style={{ fontSize: 13, color: t.textMuted, lineHeight: 1.6 }}>
+                    Create your own theme by picking 6 colors. All other UI colors are automatically derived.
+                  </div>
+
+                  <div className="settings-field">
+                    <span className="settings-label">Start From Existing Theme</span>
+                    <select
+                      className="settings-select"
+                      value={customBaseTheme}
+                      onChange={e => {
+                        const key = e.target.value;
+                        setCustomBaseTheme(key);
+                        if (key && THEMES[key]) {
+                          const base = THEMES[key];
+                          setCustomColors({
+                            bg: base.bg,
+                            surface: base.surface,
+                            text: base.text,
+                            accent: THEME_ACCENTS[key] || "#3B82F6",
+                            correct: base.correct,
+                            wrong: base.wrong,
+                          });
+                          setCustomSaved(false);
+                        }
+                      }}
+                    >
+                      <option value="">-- Select a base theme --</option>
+                      {Object.entries(THEMES).filter(([k]) => k !== 'custom').map(([key, val]) => (
+                        <option key={key} value={key}>{val.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="ctm-grid">
+                    {CUSTOM_THEME_FIELDS.map(field => (
+                      <div className="ctm-field" key={field.key}>
+                        <input
+                          type="color"
+                          className="ctm-color-input"
+                          value={customColors[field.key]}
+                          onChange={e => {
+                            setCustomColors(prev => ({ ...prev, [field.key]: e.target.value }));
+                            setCustomSaved(false);
+                          }}
+                        />
+                        <div className="ctm-field-info">
+                          <span className="ctm-field-label">{field.label}</span>
+                          <span className="ctm-field-desc">{field.desc}</span>
+                        </div>
+                        <input
+                          className="ctm-field-hex"
+                          value={customColors[field.key]}
+                          onChange={e => {
+                            let val = e.target.value;
+                            // Auto-prepend # if missing
+                            if (val && !val.startsWith('#')) val = '#' + val;
+                            // Only update state if it looks like a valid partial/full hex
+                            if (/^#[0-9a-fA-F]{0,6}$/.test(val)) {
+                              setCustomColors(prev => ({ ...prev, [field.key]: val }));
+                              setCustomSaved(false);
+                            }
+                          }}
+                          onBlur={e => {
+                            // On blur, fix to a valid 6-digit hex or revert
+                            let val = e.target.value;
+                            if (/^#[0-9a-fA-F]{6}$/.test(val)) return;
+                            // Try to fix 3-char shorthand
+                            if (/^#[0-9a-fA-F]{3}$/.test(val)) {
+                              const expanded = '#' + val[1]+val[1] + val[2]+val[2] + val[3]+val[3];
+                              setCustomColors(prev => ({ ...prev, [field.key]: expanded }));
+                            }
+                          }}
+                          spellCheck={false}
+                          maxLength={7}
+                        />
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Custom Theme Live Preview */}
+                  <div style={{ borderRadius: 12, overflow: 'hidden', border: `1px solid ${customPreviewTheme.border}` }}>
+                    <div style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      padding: '10px 20px',
+                      background: customPreviewTheme.surfaceAlt,
+                      borderBottom: `1px solid ${customPreviewTheme.border}`
+                    }}>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#FF5F57' }} />
+                        <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#FEBC2E' }} />
+                        <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#28C840' }} />
+                      </div>
+                      <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: customPreviewTheme.textMuted }}>preview.js</span>
+                      <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: customPreviewTheme.textDim }}>CUSTOM PREVIEW</span>
+                    </div>
+                    <div style={{
+                      padding: '24px 28px',
+                      background: customPreviewTheme.bg,
+                      display: 'flex',
+                      gap: 20
+                    }}>
+                      <div style={{
+                        display: 'flex', flexDirection: 'column', alignItems: 'flex-end',
+                        fontFamily: draftFont, fontSize: Math.min(draftFontSize, 14), lineHeight: 1.7,
+                        color: customPreviewTheme.textDim, userSelect: 'none'
+                      }}>
+                        {[1,2,3,4,5].map(n => <span key={n}>{n}</span>)}
+                      </div>
+                      <pre style={{
+                        margin: 0, fontFamily: draftFont, fontSize: Math.min(draftFontSize, 14), lineHeight: 1.7,
+                        whiteSpace: 'pre'
+                      }}>
+                        <span style={{ color: customPreviewTheme.textDim }}>{'// '}</span><span style={{ color: customPreviewTheme.textMuted }}>untyped code looks like this</span>{'\n'}
+                        <span style={{ color: customPreviewTheme.correct }}>{'const x = 42;'}</span>{'\n'}
+                        <span style={{ color: customPreviewTheme.wrong, background: customPreviewTheme.wrongBg, borderRadius: 2 }}>{'cnosle'}</span><span style={{ color: customPreviewTheme.textDim }}>{'.log(x);'}</span>{'\n'}
+                        <span style={{ color: customPreviewTheme.text }}>{'function '}</span><span style={{ color: customColors.accent }}>{'greet'}</span><span style={{ color: customPreviewTheme.text }}>{'() {'}</span>{'\n'}
+                        <span style={{ color: customPreviewTheme.text }}>{'  return "hello";'}</span>
+                      </pre>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                    <button
+                      className="btn-save"
+                      style={{ flex: 1 }}
+                      onClick={() => {
+                        saveCustomTheme(customColors);
+                        setDraftTheme('custom');
+                        setThemeName('custom');
+                        setCustomSaved(true);
+                        setTimeout(() => setCustomSaved(false), 3000);
+                      }}
+                    >
+                      Save & Apply Custom Theme
+                    </button>
+                    {customSaved && (
+                      <span className="ctm-saved-badge">✓ Applied</span>
+                    )}
                   </div>
                 </div>
               </>

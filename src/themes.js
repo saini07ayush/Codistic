@@ -83,3 +83,109 @@ export const THEME_ACCENTS = {
   solarized: "#268bd2", nord: "#88c0d0", catppuccin: "#cba6f7",
   dracula: "#ff79c6", gruvbox: "#fe8019", tokyoNight: "#7aa2f7", monochrome: "#ffffff", monochromeLight: "#000000",
 };
+
+// --- Custom Theme Helpers ---
+
+// The 6 essential colors the user picks
+export const CUSTOM_THEME_FIELDS = [
+  { key: "bg",      label: "Background",  desc: "Main page background" },
+  { key: "surface",  label: "Surface",     desc: "Cards & panels" },
+  { key: "text",     label: "Text",        desc: "Primary text color" },
+  { key: "accent",   label: "Accent",      desc: "Highlights & buttons" },
+  { key: "correct",  label: "Correct",     desc: "Correctly typed characters" },
+  { key: "wrong",    label: "Error",       desc: "Mistakes & wrong characters" },
+];
+
+function hexToRgb(hex) {
+  const h = hex.replace("#", "");
+  return {
+    r: parseInt(h.substring(0, 2), 16),
+    g: parseInt(h.substring(2, 4), 16),
+    b: parseInt(h.substring(4, 6), 16),
+  };
+}
+
+function rgbToHex(r, g, b) {
+  return "#" + [r, g, b].map(c => Math.max(0, Math.min(255, Math.round(c))).toString(16).padStart(2, "0")).join("");
+}
+
+function blendColors(hex1, hex2, ratio) {
+  const c1 = hexToRgb(hex1);
+  const c2 = hexToRgb(hex2);
+  return rgbToHex(
+    c1.r + (c2.r - c1.r) * ratio,
+    c1.g + (c2.g - c1.g) * ratio,
+    c1.b + (c2.b - c1.b) * ratio,
+  );
+}
+
+function rgba(hex, alpha) {
+  const { r, g, b } = hexToRgb(hex);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+// Detect if a color is "light" (for auto-calculating contrast-aware derived tokens)
+function isLight(hex) {
+  const { r, g, b } = hexToRgb(hex);
+  return (r * 299 + g * 587 + b * 114) / 1000 > 140;
+}
+
+/**
+ * Derive a full theme object from 6 essential colors.
+ * bg, surface, text, accent, correct, wrong → all 14 tokens
+ */
+export function buildThemeFromColors({ bg, surface, text, accent, correct, wrong }) {
+  const light = isLight(bg);
+  const contrastBase = light ? "#000000" : "#ffffff";
+
+  return {
+    name: "Custom",
+    bg,
+    surface,
+    surfaceAlt: blendColors(surface, bg, 0.4),
+    border: rgba(contrastBase, light ? 0.08 : 0.07),
+    borderStrong: rgba(contrastBase, light ? 0.15 : 0.12),
+    text,
+    textMuted: blendColors(text, bg, 0.4),
+    textDim: blendColors(text, bg, 0.55),
+    untyped: blendColors(text, bg, 0.7),
+    correct,
+    wrong,
+    wrongBg: rgba(wrong, 0.12),
+    grid: rgba(contrastBase, light ? 0.03 : 0.02),
+    navBg: rgba(bg, 0.9),
+  };
+}
+
+const CUSTOM_LS_KEY = "codistic-custom-theme";
+
+export function loadCustomTheme() {
+  try {
+    const raw = localStorage.getItem(CUSTOM_LS_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch { return null; }
+}
+
+export function saveCustomTheme(colors) {
+  localStorage.setItem(CUSTOM_LS_KEY, JSON.stringify(colors));
+  // Rebuild and inject into the runtime objects
+  const full = buildThemeFromColors(colors);
+  THEMES.custom = full;
+  THEME_ACCENTS.custom = colors.accent;
+}
+
+export function deleteCustomTheme() {
+  localStorage.removeItem(CUSTOM_LS_KEY);
+  delete THEMES.custom;
+  delete THEME_ACCENTS.custom;
+}
+
+// Auto-inject custom theme on module load if one exists
+(function initCustomTheme() {
+  const saved = loadCustomTheme();
+  if (saved) {
+    THEMES.custom = buildThemeFromColors(saved);
+    THEME_ACCENTS.custom = saved.accent;
+  }
+})();

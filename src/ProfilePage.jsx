@@ -376,7 +376,7 @@ export default function ProfilePage({ user, theme, accent, onBack, isMono }) {
 
       <div className="dash-wrap">
         <nav className="dash-nav">
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }} onClick={onBack}>
               <img src="/logo.jpeg" alt="Codistic Logo" style={{ width: 28, height: 28, borderRadius: 5 }} />
               <div className="dash-title">codi<span style={{ color: accent }}>stic</span> <span style={{ color: t.textDim, fontWeight: 500 }}>/ Stats</span></div>
             </div>
