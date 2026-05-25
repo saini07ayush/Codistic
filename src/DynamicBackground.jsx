@@ -15,6 +15,7 @@ export default function DynamicBackground({ wpm, accent }) {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     let animationFrameId;
     let particles = [];
@@ -44,7 +45,29 @@ export default function DynamicBackground({ wpm, accent }) {
       };
     }
 
-    const render = () => {
+    if (prefersReducedMotion) {
+      // Render particles once at initial positions, no animation
+      particles.forEach((p) => {
+        ctx.font = `${p.size}px 'JetBrains Mono', monospace`;
+        const safeAccent = accent.length === 7 ? accent : '#A855F7';
+        const hexAlpha = Math.floor(p.opacity * 255).toString(16).padStart(2, '0');
+        ctx.fillStyle = `${safeAccent}${hexAlpha}`;
+        ctx.fillText(p.text, p.x, p.y);
+      });
+      return () => { window.removeEventListener('resize', resizeCanvas); };
+    }
+
+    const targetFps = wpm > 0 ? 60 : 30;
+    const frameInterval = 1000 / targetFps;
+    let lastFrameTime = 0;
+
+    const render = (timestamp) => {
+      if (timestamp - lastFrameTime < frameInterval) {
+        animationFrameId = requestAnimationFrame(render);
+        return;
+      }
+      lastFrameTime = timestamp;
+
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       // Smooth interpolation for speed multiplier
@@ -81,6 +104,7 @@ export default function DynamicBackground({ wpm, accent }) {
   return (
     <canvas
       ref={canvasRef}
+      aria-hidden="true"
       style={{
         position: 'fixed',
         inset: 0,

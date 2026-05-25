@@ -502,7 +502,7 @@ export default function SettingsPage({
       `}</style>
 
       <div className="settings-wrap">
-        <nav className="settings-nav">
+        <nav className="settings-nav" aria-label="Settings">
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }} onClick={onBack}>
             <img src="/logo.jpeg" alt="Codistic Logo" style={{ width: 28, height: 28, borderRadius: 5 }} />
             <div className="settings-title">codi<span style={{ color: accent }}>stic</span> <span style={{ color: t.textDim, fontWeight: 500 }}>/ Settings</span></div>
@@ -512,12 +512,15 @@ export default function SettingsPage({
 
         <div className="settings-body">
           {/* Sidebar */}
-          <div className="settings-sidebar">
+          <div className="settings-sidebar" role="tablist" aria-label="Settings sections">
             {TABS.map(tab => (
               <button 
                 key={tab.id}
                 className={`tab-btn ${activeTab === tab.id ? 'active' : ''}`}
                 onClick={() => setActiveTab(tab.id)}
+                role="tab"
+                aria-selected={activeTab === tab.id}
+                id={`tab-${tab.id}`}
               >
                 <span className="tab-icon">{Icons[tab.iconKey](activeTab === tab.id ? accent : t.textMuted)}</span>
                 {tab.label}
@@ -526,15 +529,15 @@ export default function SettingsPage({
           </div>
 
           {/* Content */}
-          <div className="settings-content">
+          <div className="settings-content" role="tabpanel" aria-labelledby={`tab-${activeTab}`} id={`panel-${activeTab}`}>
             
             {/* ======= ACCOUNT TAB ======= */}
             {activeTab === "account" && (
               <div className="settings-card">
-                <div className="settings-card-title">Account Details</div>
+                <h2 className="settings-card-title">Account Details</h2>
                 
                 <div className="settings-field">
-                  <span className="settings-label">Profile Picture</span>
+                  <label className="settings-label">Profile Picture</label>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                     <img src={user.photoURL || "/logo.jpeg"} alt="avatar" className="avatar-preview" />
                     <input
@@ -555,9 +558,10 @@ export default function SettingsPage({
                 </div>
 
                 <div className="settings-field">
-                  <span className="settings-label">Display Name</span>
+                  <label className="settings-label" htmlFor="settings-display-name">Display Name</label>
                   <input 
                     className="settings-input" 
+                    id="settings-display-name"
                     value={draftName} 
                     onChange={e => setDraftName(e.target.value)}
                     placeholder="How you appear"
@@ -565,15 +569,15 @@ export default function SettingsPage({
                 </div>
 
                 <div className="settings-field">
-                  <span className="settings-label">Email Address</span>
+                  <label className="settings-label">Email Address</label>
                   <div className="settings-email-display">
                     {user.email}
                   </div>
                   <span style={{ fontSize: 11, color: t.textDim }}>Email cannot be changed from here for security reasons.</span>
                 </div>
 
-                {error && <div className="settings-alert error">⚠ {error}</div>}
-                {message && <div className="settings-alert success">✓ {message}</div>}
+                {error && <div className="settings-alert error" role="alert">⚠ {error}</div>}
+                {message && <div className="settings-alert success" role="status">✓ {message}</div>}
 
                 <button className="btn-save" onClick={handleSaveAll} disabled={loading}>
                   {loading ? "Saving..." : "Save All Settings"}
@@ -585,12 +589,13 @@ export default function SettingsPage({
             {activeTab === "appearance" && (
               <>
                 <div className="settings-card">
-                  <div className="settings-card-title">Aesthetics & Engine</div>
+                  <h2 className="settings-card-title">Aesthetics & Engine</h2>
                   
                   <div className="settings-field">
-                    <span className="settings-label">Active Theme</span>
+                    <label className="settings-label" htmlFor="settings-theme">Active Theme</label>
                     <select 
                       className="settings-select" 
+                      id="settings-theme"
                       value={draftTheme} 
                       onChange={e => setDraftTheme(e.target.value)}
                     >
@@ -601,9 +606,10 @@ export default function SettingsPage({
                   </div>
 
                   <div className="settings-field">
-                    <span className="settings-label">Editor Font</span>
+                    <label className="settings-label" htmlFor="settings-font">Editor Font</label>
                     <select 
                       className="settings-select" 
+                      id="settings-font"
                       style={{ fontFamily: draftFont }}
                       value={draftFont} 
                       onChange={e => setDraftFont(e.target.value)}
@@ -618,7 +624,7 @@ export default function SettingsPage({
                   </div>
 
                   <div className="settings-field">
-                    <span className="settings-label">Editor Font Size: {draftFontSize}px</span>
+                    <label className="settings-label">Editor Font Size: {draftFontSize}px</label>
                     <input 
                       type="range" min="12" max="24" step="1"
                       value={draftFontSize}
@@ -634,7 +640,7 @@ export default function SettingsPage({
                   <div className="settings-field">
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <div>
-                        <span className="settings-label">Virtual Keyboard</span>
+                        <label className="settings-label">Virtual Keyboard</label>
                         <div style={{ fontSize: 12, color: t.textMuted, marginTop: 2 }}>
                           Show an on-screen keyboard that highlights the next key to press. Automatically uses a compact popup for longer snippets.
                         </div>
@@ -642,6 +648,9 @@ export default function SettingsPage({
                       <button 
                         className={`toggle-switch ${showKeyboard ? 'on' : 'off'}`}
                         onClick={() => setShowKeyboard(!showKeyboard)}
+                        role="switch"
+                        aria-checked={showKeyboard}
+                        aria-label="Virtual Keyboard"
                       />
                     </div>
                   </div>
@@ -649,7 +658,7 @@ export default function SettingsPage({
                   <div className="settings-field">
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <div>
-                        <span className="settings-label">Fullscreen in Focus Mode</span>
+                        <label className="settings-label">Fullscreen in Focus Mode</label>
                         <div style={{ fontSize: 12, color: t.textMuted, marginTop: 2 }}>
                           Automatically enter fullscreen when focus mode activates. When off, focus mode hides UI elements but stays windowed.
                         </div>
@@ -657,17 +666,21 @@ export default function SettingsPage({
                       <button 
                         className={`toggle-switch ${focusFullscreen ? 'on' : 'off'}`}
                         onClick={() => setFocusFullscreen(!focusFullscreen)}
+                        role="switch"
+                        aria-checked={focusFullscreen}
+                        aria-label="Fullscreen in Focus Mode"
                       />
                     </div>
                   </div>
 
                   <div className="settings-field">
-                    <span className="settings-label">Tab Size: {tabSize} spaces</span>
+                    <label className="settings-label">Tab Size: {tabSize} spaces</label>
                     <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
                       {[2, 4, 8].map(n => (
                         <button
                           key={n}
                           onClick={() => setTabSize(n)}
+                          aria-pressed={tabSize === n}
                           style={{
                             flex: 1,
                             padding: '8px 0',
@@ -691,8 +704,8 @@ export default function SettingsPage({
                     </div>
                   </div>
 
-                  {error && <div className="settings-alert error">⚠ {error}</div>}
-                  {message && <div className="settings-alert success">✓ {message}</div>}
+                  {error && <div className="settings-alert error" role="alert">⚠ {error}</div>}
+                  {message && <div className="settings-alert success" role="status">✓ {message}</div>}
 
                   <button className="btn-save" onClick={handleSaveAll} disabled={loading}>
                     {loading ? "Saving..." : "Save All Settings"}
@@ -742,15 +755,16 @@ export default function SettingsPage({
 
                 {/* Custom Theme Maker */}
                 <div className="settings-card" ref={customThemeMakerRef} style={{ transition: 'box-shadow 0.5s ease' }}>
-                  <div className="settings-card-title">Custom Theme Maker</div>
+                  <h2 className="settings-card-title">Custom Theme Maker</h2>
                   <div style={{ fontSize: 13, color: t.textMuted, lineHeight: 1.6 }}>
                     Create your own theme by picking 6 colors. All other UI colors are automatically derived.
                   </div>
 
                   <div className="settings-field">
-                    <span className="settings-label">Start From Existing Theme</span>
+                    <label className="settings-label" htmlFor="settings-base-theme">Start From Existing Theme</label>
                     <select
                       className="settings-select"
+                      id="settings-base-theme"
                       value={customBaseTheme}
                       onChange={e => {
                         const key = e.target.value;
@@ -782,6 +796,7 @@ export default function SettingsPage({
                         <input
                           type="color"
                           className="ctm-color-input"
+                          aria-label={field.label}
                           value={customColors[field.key]}
                           onChange={e => {
                             setCustomColors(prev => ({ ...prev, [field.key]: e.target.value }));
@@ -889,7 +904,7 @@ export default function SettingsPage({
             {/* ======= SHORTCUTS TAB ======= */}
             {activeTab === "shortcuts" && (
               <div className="settings-card">
-                <div className="settings-card-title">Keyboard Shortcuts & Controls</div>
+                <h2 className="settings-card-title">Keyboard Shortcuts & Controls</h2>
                 {SHORTCUTS.map((s, i) => (
                   <div className="shortcut-row" key={i}>
                     <span className="shortcut-key">{s.keys}</span>
@@ -925,7 +940,7 @@ export default function SettingsPage({
 
                 {/* The Origin Story */}
                 <div className="settings-card">
-                  <div className="settings-card-title">The Origin Story</div>
+                  <h2 className="settings-card-title">The Origin Story</h2>
                   <div className="about-section" style={{ gap: 14 }}>
                     <p className="about-text">
                       It started with a frustration every developer knows but rarely talks about.
@@ -955,7 +970,7 @@ export default function SettingsPage({
 
                 {/* The Problem */}
                 <div className="settings-card">
-                  <div className="settings-card-title">The Problem We Solve</div>
+                  <h2 className="settings-card-title">The Problem We Solve</h2>
                   <div className="about-section" style={{ gap: 14 }}>
                     <p className="about-text">
                       Here's a fact most typing tests ignore: <strong style={{ color: t.text }}>code is not English.</strong>
@@ -993,7 +1008,7 @@ export default function SettingsPage({
 
                 {/* How It Works */}
                 <div className="settings-card">
-                  <div className="settings-card-title">How Codistic Works</div>
+                  <h2 className="settings-card-title">How Codistic Works</h2>
                   <div className="about-section" style={{ gap: 14 }}>
                     <p className="about-text">
                       Codistic pulls real, production-quality code snippets directly from <strong style={{ color: t.text }}>top-tier open-source repositories on GitHub</strong>. 
@@ -1029,7 +1044,7 @@ export default function SettingsPage({
 
                 {/* Core Features */}
                 <div className="settings-card">
-                  <div className="settings-card-title">What Sets Codistic Apart</div>
+                  <h2 className="settings-card-title">What Sets Codistic Apart</h2>
                   <div className="about-section" style={{ gap: 14 }}>
                     {[
                       { icon: "⌨️", title: "Symbol-First Training", desc: "Unlike every other typing trainer, Codistic was built from day one around the characters developers actually use. Curly braces, arrow functions, semicolons, ternary operators: the keys that slow you down the most are the ones you practice the most." },
@@ -1054,7 +1069,7 @@ export default function SettingsPage({
 
                 {/* The Philosophy */}
                 <div className="settings-card">
-                  <div className="settings-card-title">The Philosophy</div>
+                  <h2 className="settings-card-title">The Philosophy</h2>
                   <div className="about-section" style={{ gap: 14 }}>
                     <p className="about-text">
                       There's a state that every programmer chases: <strong style={{ color: t.text }}>Flow</strong>. That moment when the code just 
@@ -1077,7 +1092,7 @@ export default function SettingsPage({
 
                 {/* Built By */}
                 <div className="settings-card">
-                  <div className="settings-card-title">Built By a Developer, For Developers</div>
+                  <h2 className="settings-card-title">Built By a Developer, For Developers</h2>
                   <div className="about-section" style={{ gap: 14 }}>
                     <p className="about-text">
                       Codistic isn't a corporate product or a VC-funded startup. It's a <strong style={{ color: t.text }}>solo project</strong>, built from scratch by a developer 
@@ -1097,7 +1112,7 @@ export default function SettingsPage({
 
                 {/* Tech & Credits */}
                 <div className="settings-card">
-                  <div className="settings-card-title">Technology & Credits</div>
+                  <h2 className="settings-card-title">Technology & Credits</h2>
                   <div className="about-section" style={{ gap: 14 }}>
                     <p className="about-text">
                       Codistic is built with <strong style={{ color: t.text }}>React</strong> and <strong style={{ color: t.text }}>Vite</strong>, deployed on <strong style={{ color: t.text }}>Vercel</strong>, 
@@ -1131,7 +1146,7 @@ export default function SettingsPage({
             {activeTab === "contact" && (
               <>
                 <div className="settings-card">
-                  <div className="settings-card-title">Get In Touch</div>
+                  <h2 className="settings-card-title">Get In Touch</h2>
                   <div className="about-section">
                     <p className="about-text">
                       Have a question, feature request, or found a bug? We'd love to hear from you. 
@@ -1172,7 +1187,7 @@ export default function SettingsPage({
                 </div>
 
                 <div className="settings-card">
-                  <div className="settings-card-title">Send Feedback</div>
+                  <h2 className="settings-card-title">Send Feedback</h2>
                   <div className="settings-field">
                     <span className="settings-label">Your Message</span>
                     <textarea 

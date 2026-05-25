@@ -192,8 +192,6 @@ export default function ProfilePage({ user, theme, accent, onBack, isMono }) {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Syne:wght@700;800&display=swap');
-        
         .dash-wrap {
           min-height: 100vh;
           background: ${t.bg};
@@ -372,10 +370,11 @@ export default function ProfilePage({ user, theme, accent, onBack, isMono }) {
           gap: 12px;
           margin-left: 20px;
         }
+        .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
       `}</style>
 
       <div className="dash-wrap">
-        <nav className="dash-nav">
+        <nav className="dash-nav" aria-label="Statistics">
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }} onClick={onBack}>
               <img src="/logo.jpeg" alt="Codistic Logo" style={{ width: 28, height: 28, borderRadius: 5 }} />
               <div className="dash-title">codi<span style={{ color: accent }}>stic</span> <span style={{ color: t.textDim, fontWeight: 500 }}>/ Stats</span></div>
@@ -394,13 +393,14 @@ export default function ProfilePage({ user, theme, accent, onBack, isMono }) {
         </nav>
 
         <div className="dash-main">
+          <h1 className="sr-only">Statistics Dashboard</h1>
           {/* Left Column */}
           <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
             
             {/* Performance Matrix */}
             <div className="widget" style={{ paddingBottom: 0 }}>
               <div className="widget-header">
-                Performance Matrix
+                <h2 style={{ fontSize: 'inherit', fontFamily: 'inherit', fontWeight: 'inherit', letterSpacing: 'inherit', color: 'inherit', textTransform: 'inherit', margin: 0 }}>Performance Matrix</h2>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <div className="session-badge" style={{ background: t.border }}>{chartData.length} SESS</div>
                 </div>
@@ -447,7 +447,7 @@ export default function ProfilePage({ user, theme, accent, onBack, isMono }) {
             {/* Session Log */}
             <div className="widget">
               <div className="widget-header">
-                Recent Sessions
+                <h2 style={{ fontSize: 'inherit', fontFamily: 'inherit', fontWeight: 'inherit', letterSpacing: 'inherit', color: 'inherit', textTransform: 'inherit', margin: 0 }}>Recent Sessions</h2>
               </div>
               <div className="session-grid">
                 {sessions.length > 0 ? sessions.slice(0, 10).map((s) => (
@@ -481,7 +481,7 @@ export default function ProfilePage({ user, theme, accent, onBack, isMono }) {
             
             {/* Streak */}
             <div className="widget">
-              <div className="widget-header">Daily Streak</div>
+              <div className="widget-header"><h2 style={{ fontSize: 'inherit', fontFamily: 'inherit', fontWeight: 'inherit', letterSpacing: 'inherit', color: 'inherit', textTransform: 'inherit', margin: 0 }}>Daily Streak</h2></div>
               <div className="streak-val">{currentStreak} DAYS</div>
               <div style={{ fontSize: 12, color: t.textDim, fontFamily: "'JetBrains Mono', monospace", marginTop: 8 }}>
                 Keep active to maintain status
@@ -490,7 +490,7 @@ export default function ProfilePage({ user, theme, accent, onBack, isMono }) {
 
             {/* Zenith */}
             <div className="widget zenith-widget">
-              <div className="widget-header">Proficiency Zenith</div>
+              <div className="widget-header"><h2 style={{ fontSize: 'inherit', fontFamily: 'inherit', fontWeight: 'inherit', letterSpacing: 'inherit', color: 'inherit', textTransform: 'inherit', margin: 0 }}>Proficiency Zenith</h2></div>
               <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
                 <div className="zenith-lang-badge">
                   <span style={{ fontFamily: "'JetBrains Mono'", fontWeight: 'bold', fontSize: 24, color: '#000' }}>
@@ -516,7 +516,7 @@ export default function ProfilePage({ user, theme, accent, onBack, isMono }) {
 
             {/* Heatmap */}
             <div className="widget">
-              <div className="widget-header">Activity Heatmap</div>
+              <div className="widget-header"><h2 style={{ fontSize: 'inherit', fontFamily: 'inherit', fontWeight: 'inherit', letterSpacing: 'inherit', color: 'inherit', textTransform: 'inherit', margin: 0 }}>Activity Heatmap</h2></div>
               <div style={{ 
                 display: 'grid', 
                 gridTemplateRows: 'repeat(7, 1fr)', 
@@ -534,6 +534,7 @@ export default function ProfilePage({ user, theme, accent, onBack, isMono }) {
                     <div 
                       key={d.date} 
                       title={`${d.date}: ${d.count} sessions`}
+                      aria-label={`${d.date}: ${d.count} sessions`}
                       style={{
                         width: '100%',
                         aspectRatio: '1/1',
@@ -555,7 +556,7 @@ export default function ProfilePage({ user, theme, accent, onBack, isMono }) {
             {/* Level */}
             <div className="widget" style={{ position: 'relative', overflow: 'hidden' }}>
                <div style={{ position: 'absolute', right: -20, bottom: -20, opacity: 0.05, fontSize: 120, fontFamily: 'Syne', fontWeight: 800 }}>★</div>
-              <div className="widget-header">Current Level</div>
+              <div className="widget-header"><h2 style={{ fontSize: 'inherit', fontFamily: 'inherit', fontWeight: 'inherit', letterSpacing: 'inherit', color: 'inherit', textTransform: 'inherit', margin: 0 }}>Current Level</h2></div>
               <div className="streak-val">{currentLevel}</div>
               <div className="zenith-progress-bg" style={{ marginBottom: 0, marginTop: 16 }}>
                 <div className="zenith-progress-fill" style={{ width: `${Math.min(100, (totalSessions % 50) / 50 * 100)}%`, background: '#A855F7', boxShadow: '0 0 10px #A855F7' }} />

@@ -62,7 +62,6 @@ export default function AuthPage({ theme, accent, onSuccess }) {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&family=Syne:wght@700;800&display=swap');
         .auth-wrap {
           min-height: 100vh;
           display: flex;
@@ -217,9 +216,10 @@ export default function AuthPage({ theme, accent, onSuccess }) {
           background: ${t.wrongBg};
           border-radius: 8px;
         }
+        .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
       `}</style>
 
-      <div className="auth-wrap">
+      <main className="auth-wrap">
         <div className="auth-glow" />
         <div className="auth-card">
           <div className="auth-logo">
@@ -227,7 +227,7 @@ export default function AuthPage({ theme, accent, onSuccess }) {
             <div>codi<span>stic</span></div>
           </div>
           <div>
-            <div className="auth-title">{mode === "login" ? "Welcome back" : "Create account"}</div>
+            <h1 className="auth-title">{mode === "login" ? "Welcome back" : "Create account"}</h1>
             <div className="auth-subtitle">{mode === "login" ? "Sign in to track your progress" : "Start tracking your typing speed"}</div>
           </div>
 
@@ -250,6 +250,7 @@ export default function AuthPage({ theme, accent, onSuccess }) {
                 <input
                   type="file"
                   accept="image/*"
+                  aria-label="Profile picture upload"
                   onChange={(e) => setAvatarFile(e.target.files[0])}
                   style={{
                     padding: '8px 12px',
@@ -263,14 +264,18 @@ export default function AuthPage({ theme, accent, onSuccess }) {
                 />
               </div>
             )}
+            <label htmlFor="auth-email" className="sr-only">Email address</label>
             <input
+              id="auth-email"
               className="auth-input"
               type="email"
               placeholder="email@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
+            <label htmlFor="auth-password" className="sr-only">Password</label>
             <input
+              id="auth-password"
               className="auth-input"
               type="password"
               placeholder="password"
@@ -280,7 +285,7 @@ export default function AuthPage({ theme, accent, onSuccess }) {
             />
           </div>
 
-          {error && <div className="auth-error">{error}</div>}
+          {error && <div className="auth-error" role="alert">{error}</div>}
 
           <button className="auth-submit" onClick={handleEmail} disabled={loading}>
             {loading ? "..." : mode === "login" ? "Sign In" : "Create Account"}
@@ -293,7 +298,7 @@ export default function AuthPage({ theme, accent, onSuccess }) {
             </button>
           </div>
         </div>
-      </div>
+      </main>
     </>
   );
 }

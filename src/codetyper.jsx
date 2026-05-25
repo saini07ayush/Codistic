@@ -1,12 +1,12 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, lazy, Suspense } from "react";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { collection, addDoc, serverTimestamp, query, orderBy, limit, getDocs } from "firebase/firestore";
 import { auth, db } from "./firebase";
 import { getSnippet } from "./services/githubSnippets";
 import { THEMES, THEME_ACCENTS, loadCustomTheme } from "./themes";
-import AuthPage from "./AuthPage";
-import ProfilePage from "./ProfilePage";
-import SettingsPage from "./SettingsPage";
+const AuthPage = lazy(() => import("./AuthPage"));
+const ProfilePage = lazy(() => import("./ProfilePage"));
+const SettingsPage = lazy(() => import("./SettingsPage"));
 import DynamicBackground from "./DynamicBackground";
 import VirtualKeyboard from "./VirtualKeyboard";
 
@@ -466,15 +466,11 @@ export default function CodeTyper() {
         if (started && !finished) setPaused(p => !p);
         return;
       }
-      // If the hidden textarea is NOT focused, forward to handleKeyDown so typing still works
-      // even if user hasn't clicked the editor (desktop fallback)
-      if (document.activeElement !== hiddenInputRef.current) {
-        handleKeyDown(e);
-      }
+
     };
     window.addEventListener("keydown", globalShortcuts);
     return () => window.removeEventListener("keydown", globalShortcuts);
-  }, [handleKeyDown, loadSnippet, length, started, finished, focusMode, focusFullscreen]);
+  }, [loadSnippet, length, started, finished, focusMode, focusFullscreen]);
 
   // Auto-focus the hidden textarea whenever a new snippet loads
   useEffect(() => {
@@ -540,10 +536,17 @@ export default function CodeTyper() {
   };
 
   if (!authChecked) return null;
-  if (showAuth) return <AuthPage theme={t} accent={accent} onBack={() => setShowAuth(false)} onSuccess={() => setShowAuth(false)} />;
+
+  const suspenseFallback = (
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: t.bg, color: t.textMuted, fontFamily: "'JetBrains Mono', monospace", fontSize: 13 }}>
+      Loading...
+    </div>
+  );
+
+  if (showAuth) return <Suspense fallback={suspenseFallback}><AuthPage theme={t} accent={accent} onBack={() => setShowAuth(false)} onSuccess={() => setShowAuth(false)} /></Suspense>;
   
   if (showSettings && user) return (
-    <SettingsPage 
+    <Suspense fallback={suspenseFallback}><SettingsPage 
       user={user} 
       theme={t} 
       accent={accent} 
@@ -561,11 +564,11 @@ export default function CodeTyper() {
       setTabSize={(v) => { setTabSize(v); localStorage.setItem("codistic-tabsize", String(v)); }}
       focusFullscreen={focusFullscreen}
       setFocusFullscreen={(v) => { setFocusFullscreen(v); localStorage.setItem("codistic-focus-fullscreen", String(v)); }}
-    />
+    /></Suspense>
   );
   
   if (showProfile && user) return (
-    <ProfilePage 
+    <Suspense fallback={suspenseFallback}><ProfilePage 
       user={user} 
       theme={t} 
       accent={accent} 
@@ -573,18 +576,19 @@ export default function CodeTyper() {
       fontFamily={fontFamily}
       onFontChange={setFontFamily}
       isMono={isMono}
-    />
+    /></Suspense>
   );
 
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500&family=Syne:wght@700;800&family=Fira+Code:wght@300;400;500&family=Source+Code+Pro:wght@300;400;500&family=Inconsolata:wght@300;400;500&family=Space+Mono&family=Ubuntu+Mono&display=swap');
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        *:focus-visible { outline: 2px solid ${accent}; outline-offset: 2px; border-radius: 4px; }
+        .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
         body { background: ${t.bg}; color: ${t.text}; font-family: 'DM Sans', sans-serif; min-height: 100vh; }
         .app { min-height: 100vh; display: flex; flex-direction: column; background: ${t.bg}; position: relative; }
         .app::before { display: none; }
-        nav { position: relative; z-index: 10; display: flex; align-items: center; justify-content: center; height: 64px; border-bottom: 1px solid ${t.border}; backdrop-filter: blur(12px); background: ${t.navBg}; transition: all 0.4s cubic-bezier(0.4,0,0.2,1); }
+        nav { position: relative; z-index: 10; display: flex; align-items: center; justify-content: center; height: 64px; min-height: 64px; border-bottom: 1px solid ${t.border}; backdrop-filter: blur(12px); background: ${t.navBg}; transition: height 0.4s cubic-bezier(0.4,0,0.2,1), opacity 0.4s cubic-bezier(0.4,0,0.2,1), border-color 0.4s cubic-bezier(0.4,0,0.2,1); }
         nav.focus-hidden { height: 0; border-bottom-color: transparent; opacity: 0; pointer-events: none; overflow: hidden; }
         .focus-exit-btn { padding: 5px 12px; border-radius: 6px; border: 1px solid ${t.border}; background: transparent; color: ${t.textMuted}; font-family: 'JetBrains Mono', monospace; font-size: 11px; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 5px; }
         .focus-exit-btn:hover { color: ${t.text}; border-color: ${t.textMuted}; background: ${t.border}; }
@@ -608,7 +612,7 @@ export default function CodeTyper() {
         main.focus-mode .code-display { font-size: clamp(12px, 1.3vw, 18px); line-height: 1.75; }
         main.focus-mode .line-num { font-size: clamp(12px, 1.3vw, 18px); line-height: 1.75; }
         .focus-keyboard { padding: 0 24px 16px; display: flex; justify-content: center; flex-shrink: 0; }
-        .controls { display: flex; align-items: center; gap: 8px; padding: 6px; background: ${t.surfaceAlt}; border: 1px solid ${t.border}; border-radius: 12px; transition: all 0.4s cubic-bezier(0.4,0,0.2,1); max-height: 60px; overflow: hidden; opacity: 1; }
+        .controls { display: flex; align-items: center; gap: 8px; padding: 6px; background: ${t.surfaceAlt}; border: 1px solid ${t.border}; border-radius: 12px; transition: opacity 0.4s cubic-bezier(0.4,0,0.2,1); max-height: 60px; min-height: 46px; overflow: hidden; opacity: 1; }
         .controls.focus-hidden { display: none; }
         .ctrl-group { display: flex; gap: 4px; }
         .ctrl-btn { padding: 7px 14px; border-radius: 8px; border: none; background: transparent; color: ${t.textMuted}; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 6px; }
@@ -646,7 +650,7 @@ export default function CodeTyper() {
         .hint { font-size: 12px; color: ${t.textDim}; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.3px; text-align: center; }
         .stats-bar { display: flex; gap: 8px; width: 100%; max-width: 1080px; transition: all 0.4s cubic-bezier(0.4,0,0.2,1); max-height: 100px; overflow: hidden; opacity: 1; }
         .stats-bar.focus-hidden { display: none; }
-        .stat-card { flex: 1; padding: 16px 20px; background: ${t.surface}; border: 1px solid ${t.border}; border-radius: 10px; display: flex; flex-direction: column; gap: 4px; }
+        .stat-card { flex: 1; padding: 16px 20px; background: ${t.surface}; border: 1px solid ${t.border}; border-radius: 10px; display: flex; flex-direction: column; gap: 4px; min-height: 88px; }
         .stat-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: ${t.textMuted}; font-weight: 500; }
         .stat-value { font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 500; color: ${t.text}; line-height: 1; }
         .stat-unit { font-size: 11px; color: ${t.textMuted}; }
@@ -682,7 +686,7 @@ export default function CodeTyper() {
         .btn-secondary:hover { background: ${t.surfaceAlt}; color: ${t.text}; }
         .custom-input { width: 100%; padding: 16px; border-radius: 12px; border: 1px solid ${t.border}; background: ${t.surfaceAlt}; color: ${t.text}; font-family: ${fontFamily}; font-size: ${fontSize}px; outline: none; transition: border-color 0.15s; }
         .custom-input:focus { border-color: ${accent}; }
-        footer { position: relative; z-index: 1; border-top: 1px solid ${t.border}; padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; background: ${t.navBg}; backdrop-filter: blur(12px); transition: all 0.4s cubic-bezier(0.4,0,0.2,1); overflow: hidden; max-height: 80px; opacity: 1; }
+        footer { position: relative; z-index: 1; border-top: 1px solid ${t.border}; padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; background: ${t.navBg}; backdrop-filter: blur(12px); transition: opacity 0.4s cubic-bezier(0.4,0,0.2,1); overflow: hidden; max-height: 80px; min-height: 60px; opacity: 1; }
         footer.focus-hidden { display: none; }
         .focus-stats-bar { display: flex; align-items: center; gap: 20px; transition: all 0.3s ease; }
         .focus-stat { display: flex; align-items: baseline; gap: 4px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: ${t.textMuted}; }
@@ -693,16 +697,23 @@ export default function CodeTyper() {
         .footer-link { background: none; border: none; color: ${t.textMuted}; font-family: 'DM Sans', sans-serif; font-size: 12px; cursor: pointer; transition: color 0.15s; }
         .footer-link:hover { color: ${t.text}; }
         .footer-copy { font-size: 11px; color: ${t.textDim}; font-family: 'JetBrains Mono', monospace; }
+        .skip-link { position: absolute; left: -9999px; top: auto; z-index: 9999; padding: 8px 16px; background: ${accent}; color: #fff; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; border-radius: 0 0 8px 8px; text-decoration: none; }
+        .skip-link:focus { left: 16px; top: 0; }
+        @media (prefers-reduced-motion: reduce) {
+          *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+          .cursor-blink { animation: none; opacity: 1; }
+        }
       `}</style>
 
       <div className={`app${focusMode ? ' focus-active' : ''}`}>
+        <a href="#editor-main" className="skip-link">Skip to editor</a>
         <DynamicBackground wpm={finished ? 0 : wpm} accent={accent} />
 
-        <nav className={focusMode ? 'focus-hidden' : ''}>
+        <nav className={focusMode ? 'focus-hidden' : ''} aria-label="Main navigation">
           <div className="nav-inner">
             <div className="nav-logo">
             <img src="/logo.jpeg" alt="Codistic Logo" style={{ width: 26, height: 26, borderRadius: 4 }} />
-            <div>codi<span>stic</span></div>
+            <h1 style={{ fontSize: 'inherit', fontWeight: 'inherit', fontFamily: 'inherit', margin: 0, letterSpacing: 'inherit' }}>codi<span>stic</span></h1>
           </div>
           <div className="nav-center">
             <div className="nav-stat">
@@ -720,19 +731,20 @@ export default function CodeTyper() {
           </div>
           <div className="nav-right">
               <div className="theme-picker-wrap">
-                <button className="btn-nav btn-nav-themed" onClick={() => setShowThemePicker((p) => !p)} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <button className="btn-nav btn-nav-themed" onClick={() => setShowThemePicker((p) => !p)} style={{ display: 'flex', alignItems: 'center', gap: 8 }} aria-haspopup="true" aria-expanded={showThemePicker}>
                   <div style={{ width: 10, height: 10, borderRadius: '50%', background: (themeName === 'monochrome' || themeName === 'monochromeLight') ? '#888888' : (THEME_ACCENTS[themeName] || accent), flexShrink: 0, border: `1px solid ${t.border}` }} />
                   {THEMES[themeName]?.name || 'Theme'}
                   <span style={{ fontSize: 9, opacity: 0.5, marginLeft: 2 }}>▼</span>
                 </button>
                 {showThemePicker && (
-                  <div className="theme-picker-dropdown">
+                  <div className="theme-picker-dropdown" role="menu">
                     <div className="theme-dropdown-label">Built-in</div>
                     {Object.entries(THEMES).filter(([key]) => key !== 'custom').map(([key, val]) => (
                       <button
                         key={key}
                         className={`theme-option ${themeName === key ? "active" : ""}`}
-                        onClick={() => { setThemeName(key); setShowThemePicker(false); }}
+                        onClick={() => { setThemeName(key); setShowThemePicker(false); setTimeout(() => hiddenInputRef.current?.focus(), 50); }}
+                        role="menuitem"
                       >
                         <div className="theme-swatch" style={{ background: key === 'monochrome' ? '#888888' : key === 'monochromeLight' ? '#888888' : THEME_ACCENTS[key] }} />
                         {val.name}
@@ -746,7 +758,8 @@ export default function CodeTyper() {
                     {THEMES.custom ? (
                       <button
                         className={`theme-option ${themeName === 'custom' ? "active" : ""}`}
-                        onClick={() => { setThemeName('custom'); setShowThemePicker(false); }}
+                        onClick={() => { setThemeName('custom'); setShowThemePicker(false); setTimeout(() => hiddenInputRef.current?.focus(), 50); }}
+                        role="menuitem"
                       >
                         <div
                           className="theme-custom-swatch"
@@ -761,7 +774,7 @@ export default function CodeTyper() {
                         <span
                           className="theme-edit-icon"
                           title="Edit in Settings"
-                          onClick={(e) => { e.stopPropagation(); setShowThemePicker(false); setSettingsDeepLink('customTheme'); setShowSettings(true); }}
+                          onClick={(e) => { e.stopPropagation(); setShowThemePicker(false); setTimeout(() => hiddenInputRef.current?.focus(), 50); setSettingsDeepLink('customTheme'); setShowSettings(true); }}
                         >
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                         </span>
@@ -769,7 +782,8 @@ export default function CodeTyper() {
                     ) : (
                       <button
                         className="theme-create-btn"
-                        onClick={() => { setShowThemePicker(false); if (user) { setSettingsDeepLink('customTheme'); setShowSettings(true); } else setShowAuth(true); }}
+                        onClick={() => { setShowThemePicker(false); setTimeout(() => hiddenInputRef.current?.focus(), 50); if (user) { setSettingsDeepLink('customTheme'); setShowSettings(true); } else setShowAuth(true); }}
+                        role="menuitem"
                       >
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>
                         Create Custom Theme
@@ -781,28 +795,28 @@ export default function CodeTyper() {
 
             {user ? (
               <div className="theme-picker-wrap">
-                <button className="btn-nav" style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 12px' }} onClick={() => setShowUserMenu((p) => !p)}>
+                <button className="btn-nav" style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 12px' }} onClick={() => setShowUserMenu((p) => !p)} aria-haspopup="true" aria-expanded={showUserMenu}>
                   {user.photoURL && (
                      <img src={user.photoURL} alt="avatar" style={{width: 22, height: 22, borderRadius: '50%', objectFit: 'cover', border: `1px solid ${t.border}`}} />
                   )}
                   Profile <span style={{ fontSize: 9, opacity: 0.7 }}>▼</span>
                 </button>
                 {showUserMenu && (
-                  <div className="theme-picker-dropdown" style={{ minWidth: 180, right: 0 }}>
+                  <div className="theme-picker-dropdown" style={{ minWidth: 180, right: 0 }} role="menu">
                     <div style={{ padding: '10px 12px', fontSize: 13, color: t.text, fontWeight: 500 }}>
                       Hello, {user.displayName || user.email?.split('@')[0]}
                     </div>
                     <div style={{ height: 1, background: t.border, margin: '4px 0' }} />
-                    <button className="theme-option" onClick={() => { setShowProfile(true); setShowUserMenu(false); }} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <button className="theme-option" onClick={() => { setShowProfile(true); setShowUserMenu(false); setTimeout(() => hiddenInputRef.current?.focus(), 50); }} style={{ display: 'flex', alignItems: 'center', gap: 8 }} role="menuitem">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
                       View Stats
                     </button>
-                    <button className="theme-option" onClick={() => { setShowSettings(true); setShowUserMenu(false); }} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <button className="theme-option" onClick={() => { setShowSettings(true); setShowUserMenu(false); setTimeout(() => hiddenInputRef.current?.focus(), 50); }} style={{ display: 'flex', alignItems: 'center', gap: 8 }} role="menuitem">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                       Settings
                     </button>
                     <div style={{ height: 1, background: t.border, margin: '4px 0' }} />
-                    <button className="theme-option" style={{ color: t.wrong, display: 'flex', alignItems: 'center', gap: 8 }} onClick={() => { signOut(auth); setShowUserMenu(false); }}>
+                    <button className="theme-option" style={{ color: t.wrong, display: 'flex', alignItems: 'center', gap: 8 }} onClick={() => { signOut(auth); setShowUserMenu(false); setTimeout(() => hiddenInputRef.current?.focus(), 50); }} role="menuitem">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
                       Sign Out
                     </button>
@@ -816,11 +830,11 @@ export default function CodeTyper() {
           </div>
         </nav>
 
-        <main className={focusMode ? 'focus-mode' : ''} onClick={() => { setShowThemePicker(false); setShowUserMenu(false); }}>
+        <main id="editor-main" className={focusMode ? 'focus-mode' : ''} onClick={() => { setShowThemePicker(false); setShowUserMenu(false); hiddenInputRef.current?.focus(); }}>
           <div className={`controls ${focusMode ? 'focus-hidden' : ''}`}>
             <div className="ctrl-group">
               {LANGUAGES.map((lang) => (
-                <button key={lang} className={`ctrl-btn ${language === lang ? "active" : ""}`} onClick={() => setLanguage(lang)}>
+                <button key={lang} className={`ctrl-btn ${language === lang ? "active" : ""}`} onClick={() => setLanguage(lang)} aria-pressed={language === lang}>
                   <span className="ctrl-dot" style={{ background: isMono ? t.textMuted : LANG_COLORS[lang] }} />
                   {lang}
                 </button>
@@ -829,7 +843,7 @@ export default function CodeTyper() {
             <div className="ctrl-divider" />
             <div className="ctrl-group">
               {LENGTHS.map((l) => (
-                <button key={l} className={`ctrl-btn ${length === l ? "active" : ""}`} onClick={() => setLength(l)}>
+                <button key={l} className={`ctrl-btn ${length === l ? "active" : ""}`} onClick={() => setLength(l)} aria-pressed={length === l}>
                   {l === "short" ? "short" : l === "medium" ? "warmup" : "full"}
                 </button>
               ))}
@@ -843,13 +857,13 @@ export default function CodeTyper() {
               </button>
             )}          </div>
 
-          <div className="progress-bar-wrap" style={focusMode ? { display: 'none' } : undefined}>
+          <div className="progress-bar-wrap" role="progressbar" aria-valuenow={snippet ? Math.round((typed.length / snippet.code.length) * 100) : 0} aria-valuemin={0} aria-valuemax={100} aria-label="Typing progress" style={focusMode ? { display: 'none' } : undefined}>
             <div className="progress-bar-fill" style={{ width: snippet ? `${(typed.length / snippet.code.length) * 100}%` : "0%", background: accent }} />
           </div>
 
           <div className="editor-wrap" ref={editorWrapRef}>
             <div className="editor-header">
-              <div className="editor-dots">
+              <div className="editor-dots" aria-hidden="true">
                 <div className="editor-dot" style={{ background: "#FF5F57" }} />
                 <div className="editor-dot" style={{ background: "#FEBC2E" }} />
                 <div className="editor-dot" style={{ background: "#28C840" }} />
@@ -897,12 +911,12 @@ export default function CodeTyper() {
                 spellCheck={false}
               />
               {loading ? (
-                <div className="loading-state">
-                  <div className="spinner" />
+                <div className="loading-state" role="status" aria-live="polite">
+                  <div className="spinner" aria-hidden="true" />
                   <span className="loading-text">fetching from github...</span>
                 </div>
               ) : error ? (
-                <div className="loading-state" style={{ color: t.wrong }}>
+                <div className="loading-state" role="alert" style={{ color: t.wrong }}>
                   <span>⚠ {error}</span>
                   <button className="btn-secondary" onClick={loadSnippet} style={{ marginTop: 8 }}>retry</button>
                 </div>
@@ -926,7 +940,7 @@ export default function CodeTyper() {
             </div>
           </div>
 
-          <div className={`stats-bar ${focusMode ? 'focus-hidden' : ''}`}>
+          <div className={`stats-bar ${focusMode ? 'focus-hidden' : ''}`} aria-live="polite">
             {[
               { label: "WPM", value: wpm || 0, unit: "words/min" },
               { label: "Accuracy", value: `${accuracy}`, unit: "percent" },
@@ -960,10 +974,10 @@ export default function CodeTyper() {
         )}
 
         {finished && (
-          <div className="results-overlay">
+          <div className="results-overlay" role="dialog" aria-modal="true" aria-labelledby="results-title">
             <div className="results-card">
               <div>
-                <div className="results-title">Session Complete</div>
+                <div className="results-title" id="results-title">Session Complete</div>
                 <p style={{ color: t.textMuted, fontSize: 14, marginTop: 6, fontFamily: "'DM Sans'" }}>
                   {snippet?.file} · {snippet?.source}
                 </p>
@@ -996,8 +1010,8 @@ export default function CodeTyper() {
                 </div>
               </div>
               <div className="results-actions">
-                <button className="btn-primary" onClick={loadSnippet}>Next Snippet</button>
-                <button className="btn-secondary" onClick={() => { setTyped(""); setStarted(false); setFinished(false); setFocusMode(false); setWpm(0); setAccuracy(100); setElapsed(0); setCursorPos(0); }}>
+                <button className="btn-primary" onClick={() => { loadSnippet(); setTimeout(() => hiddenInputRef.current?.focus(), 50); }}>Next Snippet</button>
+                <button className="btn-secondary" onClick={() => { setTyped(""); setStarted(false); setFinished(false); setFocusMode(false); setWpm(0); setAccuracy(100); setElapsed(0); setCursorPos(0); setTimeout(() => hiddenInputRef.current?.focus(), 50); }}>
                   Retry
                 </button>
               </div>
@@ -1006,10 +1020,10 @@ export default function CodeTyper() {
         )}
 
         {showCustomModal && (
-          <div className="results-overlay">
+          <div className="results-overlay" role="dialog" aria-modal="true" aria-labelledby="custom-modal-title">
             <div className="results-card">
               <div>
-                <div className="results-title">Load from URL</div>
+                <div className="results-title" id="custom-modal-title">Load from URL</div>
                 <p style={{ color: t.textMuted, fontSize: 14, marginTop: 6, fontFamily: "'DM Sans'" }}>
                   Paste a valid URL to any raw file or Github code link below.
                 </p>
@@ -1024,8 +1038,8 @@ export default function CodeTyper() {
                 autoFocus
               />
               <div className="results-actions">
-                <button className="btn-secondary" onClick={() => setShowCustomModal(false)}>Cancel</button>
-                <button className="btn-primary" onClick={handleStartCustom}>Start Typing</button>
+                <button className="btn-secondary" onClick={() => { setShowCustomModal(false); setTimeout(() => hiddenInputRef.current?.focus(), 50); }}>Cancel</button>
+                <button className="btn-primary" onClick={() => { handleStartCustom(); setTimeout(() => hiddenInputRef.current?.focus(), 50); }}>Start Typing</button>
               </div>
             </div>
           </div>
