@@ -4,6 +4,7 @@ import { collection, addDoc, serverTimestamp, query, orderBy, limit, getDocs } f
 import { auth, db } from "./firebase";
 import { getSnippet } from "./services/githubSnippets";
 import { THEMES, THEME_ACCENTS, loadCustomTheme } from "./themes";
+import { loadAllCustomFonts } from "./fontManager";
 const AuthPage = lazy(() => import("./AuthPage"));
 const ProfilePage = lazy(() => import("./ProfilePage"));
 const SettingsPage = lazy(() => import("./SettingsPage"));
@@ -115,6 +116,10 @@ export default function CodeTyper() {
   useEffect(() => {
     localStorage.setItem("codistic-theme", themeName);
   }, [themeName]);
+  // Load all custom fonts (Google Fonts + uploaded) on mount
+  useEffect(() => {
+    loadAllCustomFonts();
+  }, []);
   useEffect(() => {
     localStorage.setItem("codistic-font", fontFamily);
   }, [fontFamily]);
@@ -711,10 +716,17 @@ export default function CodeTyper() {
 
         <nav className={focusMode ? 'focus-hidden' : ''} aria-label="Main navigation">
           <div className="nav-inner">
-            <div className="nav-logo">
-            <img src="/logo.jpeg" alt="Codistic Logo" style={{ width: 26, height: 26, borderRadius: 4 }} />
-            <h1 style={{ fontSize: 'inherit', fontWeight: 'inherit', fontFamily: 'inherit', margin: 0, letterSpacing: 'inherit' }}>codi<span>stic</span></h1>
-          </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <img src="/logo.jpeg" alt="Codistic Logo" style={{ width: 38, height: 38, borderRadius: 8 }} />
+              <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <div className="nav-logo" style={{ gap: 0 }}>
+                  <h1 style={{ fontSize: 'inherit', fontWeight: 'inherit', fontFamily: 'inherit', margin: 0, letterSpacing: 'inherit' }}>codi<span>stic</span></h1>
+                </div>
+                <div style={{ fontSize: 10, color: t.textMuted, fontFamily: "'JetBrains Mono', monospace", letterSpacing: 0.5, marginTop: 0 }}>
+                  Protect your flow state
+                </div>
+              </div>
+            </div>
           <div className="nav-center">
             <div className="nav-stat">
               <span className="nav-stat-label">{started ? 'WPM' : 'AVG WPM'}</span>

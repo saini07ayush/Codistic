@@ -5,7 +5,7 @@
 <h1 align="center">Codistic</h1>
 
 <p align="center">
-  <strong>The Code Typing Engine. Practice typing real code, not prose.</strong>
+  <strong>Protect your flow state. Practice typing real code, not prose.</strong>
 </p>
 
 <p align="center">
