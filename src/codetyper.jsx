@@ -442,11 +442,11 @@ export default function CodeTyper() {
       }
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
         e.preventDefault();
-        setShowKeyboard(k => {
-          const newVal = !k;
-          localStorage.setItem("codistic-show-keyboard", String(newVal));
-          return newVal;
-        });
+        const currentlyVisible = showKeyboard && !keyboardHidden;
+        const newVal = !currentlyVisible;
+        setShowKeyboard(newVal);
+        setKeyboardHidden(false);
+        localStorage.setItem("codistic-show-keyboard", String(newVal));
         return;
       }
       // Escape: exit focus mode or close results
@@ -475,7 +475,7 @@ export default function CodeTyper() {
     };
     window.addEventListener("keydown", globalShortcuts);
     return () => window.removeEventListener("keydown", globalShortcuts);
-  }, [loadSnippet, length, started, finished, focusMode, focusFullscreen]);
+  }, [loadSnippet, length, started, finished, focusMode, focusFullscreen, showKeyboard, keyboardHidden]);
 
   // Auto-focus the hidden textarea whenever a new snippet loads
   useEffect(() => {
