@@ -30,7 +30,7 @@
 
 ## The Problem
 
-Traditional typing trainers measure how fast you type English prose. But when you sit down to code, you face a completely different set of keystrokes — `{ } ( ) => [] === && || ;` — the symbols, indentation patterns, and nested syntax that no prose trainer ever practices.
+Traditional typing trainers measure how fast you type English prose. But when you sit down to code, you face a completely different set of keystrokes - `{ } ( ) => [] === && || ;` - the symbols, indentation patterns, and nested syntax that no prose trainer ever practices.
 
 **Codistic** fixes that by pulling **real code from top-tier open-source repositories** and letting you type it keystroke-for-keystroke, with live performance tracking, a dynamic visual engine, and cloud-synced progress.
 
@@ -42,7 +42,7 @@ Traditional typing trainers measure how fast you type English prose. But when yo
 
 ### Real Code Snippets from GitHub
 
-Every snippet is fetched **live from production-quality open-source repositories** via the GitHub API — never contrived exercises or random character strings.
+Every snippet is fetched **live from production-quality open-source repositories** via the GitHub API - never contrived exercises or random character strings.
 
 | Language | Source Repos |
 |----------|-------------|
@@ -69,7 +69,7 @@ Snippets are intelligently extracted at the **function level**: docstrings are s
 
 ### Custom URL Loader
 
-Paste **any public code URL** and type it instantly. GitHub blob URLs are **auto-converted to raw URLs** — practice your own codebase, your team's style guide, or any open-source library you're studying.
+Paste **any public code URL** and type it instantly. GitHub blob URLs are **auto-converted to raw URLs** - practice your own codebase, your team's style guide, or any open-source library you're studying.
 
 ---
 
@@ -77,21 +77,21 @@ Paste **any public code URL** and type it instantly. GitHub blob URLs are **auto
 
 A full **on-screen QWERTY keyboard** that mirrors your physical typing in real time:
 
-- **Next-key highlighting** — the key you need to press next glows with a pulsing accent border, including Shift indicators for uppercase and symbols
-- **Correct / Wrong flash** — keys flash green on correct presses and red on mistakes
-- **Draggable** — grab the drag handle and reposition it anywhere on screen
-- **Resizable** — drag the corner handle to scale between 50% – 150%, persisted to `localStorage`
-- **Three size modes** — compact (floating overlay), small, and full-width
-- **Toggle with `Ctrl + K`** — show or hide instantly without losing position
+- **Next-key highlighting** - the key you need to press next glows with a pulsing accent border, including Shift indicators for uppercase and symbols
+- **Correct / Wrong flash** - keys flash green on correct presses and red on mistakes
+- **Draggable** - grab the drag handle and reposition it anywhere on screen
+- **Resizable** - drag the corner handle to scale between 50% - 150%, persisted to `localStorage`
+- **Three size modes** - compact (floating overlay), small, and full-width
+- **Toggle with `Ctrl + K`** - show or hide instantly without losing position
 
 ---
 
 ### Focus Mode & Fullscreen
 
-Press `Ctrl + F` or start typing to enter **Focus Mode** — the navbar, footer, controls bar, and stats cards all collapse, leaving only the editor and the virtual keyboard visible. When fullscreen is enabled (configurable in Settings), Focus Mode automatically requests the browser Fullscreen API for a truly distraction-free experience.
+Press `Ctrl + F` or start typing to enter **Focus Mode** - the navbar, footer, controls bar, and stats cards all collapse, leaving only the editor and the virtual keyboard visible. When fullscreen is enabled (configurable in Settings), Focus Mode automatically requests the browser Fullscreen API for a truly distraction-free experience.
 
 - **Escape** exits focus mode
-- **Fullscreen toggle** is independently configurable — you can use Focus Mode with or without actual fullscreen
+- **Fullscreen toggle** is independently configurable - you can use Focus Mode with or without actual fullscreen
 
 ---
 
@@ -126,7 +126,7 @@ Build your **own theme** from scratch by picking 6 essential colors:
 | **Correct** | Correctly typed characters |
 | **Error** | Mistakes & wrong characters |
 
-All remaining tokens (borders, muted text, overlays, etc.) are **auto-derived** using luminance detection and color blending — your 6 picks produce a complete, coherent 14-token theme.
+All remaining tokens (borders, muted text, overlays, etc.) are **auto-derived** using luminance detection and color blending - your 6 picks produce a complete, coherent 14-token theme.
 
 #### Monkeytype Theme Import
 
@@ -136,15 +136,15 @@ Already have a theme you love on Monkeytype? Paste the Monkeytype share URL (con
 
 ### 6 Built-in Fonts + Custom Font Manager
 
-Choose from **JetBrains Mono**, **Fira Code**, **Source Code Pro**, **Inconsolata**, **Space Mono**, and **Ubuntu Mono**, with adjustable font size from 12 – 24px.
+Choose from **JetBrains Mono**, **Fira Code**, **Source Code Pro**, **Inconsolata**, **Space Mono**, and **Ubuntu Mono**, with adjustable font size from 12 - 24px.
 
 #### Custom Font Manager
 
 Go beyond the defaults:
 
-- **Google Fonts** — type any Google Font name and Codistic validates it in real time using the Font Loading API, then injects it via stylesheet
-- **Upload your own** — drag-and-drop or browse for `.ttf`, `.woff`, `.woff2`, or `.otf` files (up to 2 MB each, max 10 uploaded fonts)
-- Uploaded fonts are stored in **IndexedDB** as base64 data URLs and injected via `@font-face` — they persist across sessions with zero network requests
+- **Google Fonts** - type any Google Font name and Codistic validates it in real time using the Font Loading API, then injects it via stylesheet
+- **Upload your own** - drag-and-drop or browse for `.ttf`, `.woff`, `.woff2`, or `.otf` files (up to 2 MB each, max 10 uploaded fonts)
+- Uploaded fonts are stored in **IndexedDB** as base64 data URLs and injected via `@font-face` - they persist across sessions with zero network requests
 - Remove any custom font with one click; if the removed font was active, Codistic falls back to JetBrains Mono
 
 ---
@@ -200,7 +200,7 @@ Sign in with **Google** or **email/password** (Firebase Auth). All session data,
 
 ### Pause & Resume
 
-Press `Ctrl + P` mid-session to freeze the timer. Resume without losing any progress — your elapsed time stays accurate.
+Press `Ctrl + P` mid-session to freeze the timer. Resume without losing any progress - your elapsed time stays accurate.
 
 ---
 
@@ -220,11 +220,11 @@ A sidebar-tabbed settings page with five sections:
 
 ### Performance Optimizations
 
-- **Lazy-loaded pages** — `AuthPage`, `ProfilePage`, and `SettingsPage` are loaded via `React.lazy()` + `Suspense` to keep the initial bundle lean
-- **Async font loading** — optional editor fonts load with `media="print"` and swap on load
-- **Font preconnects** — Google Fonts connections are prewarmed at HTML level
-- **Snippet retry logic** — failed GitHub API calls are retried up to 5 times with 600ms delays
-- **LocalStorage persistence** — theme, font, font size, tab size, keyboard visibility, keyboard scale, and fullscreen preference are all persisted client-side
+- **Lazy-loaded pages** - `AuthPage`, `ProfilePage`, and `SettingsPage` are loaded via `React.lazy()` + `Suspense` to keep the initial bundle lean
+- **Async font loading** - optional editor fonts load with `media="print"` and swap on load
+- **Font preconnects** - Google Fonts connections are prewarmed at HTML level
+- **Snippet retry logic** - failed GitHub API calls are retried up to 5 times with 600ms delays
+- **LocalStorage persistence** - theme, font, font size, tab size, keyboard visibility, keyboard scale, and fullscreen preference are all persisted client-side
 
 ---
 
@@ -291,7 +291,7 @@ A sidebar-tabbed settings page with five sections:
 - **Node.js** ≥ 18
 - **npm** ≥ 9
 - A **Firebase** project with Auth, Firestore, and Storage enabled
-- A **GitHub Personal Access Token** (for the snippet API — avoids rate limits)
+- A **GitHub Personal Access Token** (for the snippet API - avoids rate limits)
 
 ### 1. Clone the Repository
 
@@ -439,7 +439,7 @@ flowchart TD
     E --> F[Extract function-level snippets]
     F --> G[Strip comments & normalize indent]
     G --> H[Display in editor UI]
-    H --> I[User types — keydown events captured]
+    H --> I[User types - keydown events captured]
     I --> J[Real-time WPM & accuracy calculation]
     J --> K{Snippet complete?}
     K -->|No| I
