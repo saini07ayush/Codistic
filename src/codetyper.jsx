@@ -611,7 +611,7 @@ export default function CodeTyper() {
         .nav-stat-value { font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 500; color: ${t.text}; }
         .btn-nav { padding: 7px 14px; border-radius: 8px; border: 1px solid ${t.border}; background: transparent; color: ${t.textMuted}; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.15s; }
         .btn-nav:hover { color: ${t.text}; border-color: ${t.text}; }
-        .btn-nav-accent { padding: 7px 14px; border-radius: 8px; border: none; background: ${accent}; color: #fff; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; transition: opacity 0.15s; }
+        .btn-nav-accent { padding: 7px 14px; border-radius: 8px; border: none; background: ${accent}; color: ${themeName === 'monochrome' ? '#000000' : themeName === 'monochromeLight' ? '#ffffff' : '#fff'}; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; transition: opacity 0.15s; }
         .btn-nav-accent:hover { opacity: 0.85; }
         .app.focus-active { height: 100vh; overflow: hidden; }
         main { position: relative; z-index: 1; flex: 1; display: flex; flex-direction: column; align-items: center; padding: 48px 24px; gap: 24px; transition: padding 0.4s cubic-bezier(0.4,0,0.2,1); }
@@ -851,14 +851,18 @@ export default function CodeTyper() {
           }}>
           <div className={`controls ${focusMode ? 'focus-hidden' : ''}`}>
             <div className="ctrl-group">
-              {LANGUAGES.map((lang) => (
+              {LANGUAGES.map((lang) => {
+                const isMono = themeName === 'monochrome' || themeName === 'monochromeLight';
+                const dotColor = isMono ? (themeName === 'monochrome' ? '#888888' : '#555555') : LANG_COLORS[lang];
+                return (
                 <button key={lang} className={`ctrl-btn ${language === lang ? "active" : ""}`} onClick={() => setLanguage(lang)} aria-pressed={language === lang}
-                  style={language === lang ? { borderColor: LANG_COLORS[lang] + '60', background: LANG_COLORS[lang] + '12' } : {}}
+                  style={language === lang ? { borderColor: dotColor + '60', background: dotColor + '12' } : {}}
                 >
-                  <span className="ctrl-dot" style={{ background: LANG_COLORS[lang], boxShadow: language === lang ? `0 0 6px ${LANG_COLORS[lang]}80` : 'none' }} />
+                  <span className="ctrl-dot" style={{ background: dotColor, boxShadow: language === lang ? `0 0 6px ${dotColor}80` : 'none' }} />
                   {lang}
                 </button>
-              ))}
+                );
+              })}
             </div>
             <div className="ctrl-divider" />
             <div className="ctrl-group">
@@ -884,9 +888,19 @@ export default function CodeTyper() {
           <div className="editor-wrap" ref={editorWrapRef}>
             <div className="editor-header">
               <div className="editor-dots" aria-hidden="true">
-                <div className="editor-dot" style={{ background: "#FF5F57" }} />
-                <div className="editor-dot" style={{ background: "#FEBC2E" }} />
-                <div className="editor-dot" style={{ background: "#28C840" }} />
+                {(themeName === 'monochrome' || themeName === 'monochromeLight') ? (
+                  <>
+                    <div className="editor-dot" style={{ background: themeName === 'monochrome' ? '#555555' : '#aaaaaa' }} />
+                    <div className="editor-dot" style={{ background: themeName === 'monochrome' ? '#555555' : '#aaaaaa' }} />
+                    <div className="editor-dot" style={{ background: themeName === 'monochrome' ? '#555555' : '#aaaaaa' }} />
+                  </>
+                ) : (
+                  <>
+                    <div className="editor-dot" style={{ background: "#FF5F57" }} />
+                    <div className="editor-dot" style={{ background: "#FEBC2E" }} />
+                    <div className="editor-dot" style={{ background: "#28C840" }} />
+                  </>
+                )}
               </div>
               {started && !finished ? (
                 <div className="focus-stats-bar">
