@@ -46,6 +46,7 @@ export default function SettingsPage({
   fontFamily, setFontFamily,
   fontSize, setFontSize,
   themeName, setThemeName,
+  refreshTheme,
   showKeyboard, setShowKeyboard,
   tabSize, setTabSize,
   focusFullscreen, setFocusFullscreen,
@@ -95,6 +96,7 @@ export default function SettingsPage({
   const [customColors, setCustomColors] = useState(existingCustom || defaultCustomColors);
   const [customBaseTheme, setCustomBaseTheme] = useState("");
   const [customSaved, setCustomSaved] = useState(false);
+  const [monkeytypeUrl, setMonkeytypeUrl] = useState("");
   const customPreviewTheme = buildThemeFromColors(customColors);
 
   // --- Custom Fonts State ---
@@ -121,6 +123,33 @@ export default function SettingsPage({
   const showFontMsg = (text, type) => {
     setFontMsg({ text, type });
     setTimeout(() => setFontMsg({ text: "", type: "" }), 4000);
+  };
+
+  const handleImportMonkeytypeTheme = () => {
+    try {
+      const url = new URL(monkeytypeUrl);
+      const customThemeBase64 = url.searchParams.get("customTheme");
+      if (!customThemeBase64) throw new Error("No customTheme parameter found.");
+      
+      const jsonStr = atob(customThemeBase64);
+      const data = JSON.parse(jsonStr);
+      if (!data || !data.c || data.c.length < 7) throw new Error("Invalid theme format.");
+      
+      const c = data.c;
+      setCustomColors({
+        bg: c[0],
+        accent: c[1],
+        surface: c[4],
+        text: c[5],
+        correct: c[5],
+        wrong: c[6],
+      });
+      setMonkeytypeUrl("");
+      setCustomSaved(false);
+      setCustomBaseTheme("");
+    } catch (e) {
+      alert("Failed to parse Monkeytype theme link. Please ensure you copied the full URL containing ?customTheme=...");
+    }
   };
 
   const handleAddGoogleFont = async () => {
@@ -226,6 +255,9 @@ export default function SettingsPage({
       setThemeName(draftTheme);
       setFontFamily(draftFont);
       setFontSize(draftFontSize);
+
+      // Force parent to re-derive theme (needed when custom theme colors changed)
+      if (refreshTheme) refreshTheme();
 
       setMessage("All settings saved successfully.");
       setAvatarFile(null);
@@ -392,7 +424,17 @@ export default function SettingsPage({
           border-color: ${accent};
         }
 
-        .settings-select { cursor: pointer; }
+        .settings-select {
+          cursor: pointer;
+          appearance: none;
+          -webkit-appearance: none;
+          -moz-appearance: none;
+          padding-right: 40px;
+          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+          background-repeat: no-repeat;
+          background-position: right 14px center;
+          background-size: 12px;
+        }
 
         .btn-save {
           width: 100%;
@@ -615,6 +657,7 @@ export default function SettingsPage({
         .font-picker-trigger {
           width: 100%;
           padding: 12px 14px;
+          padding-right: 40px;
           border-radius: 10px;
           border: 1px solid ${t.border};
           background: ${t.surfaceAlt};
@@ -623,11 +666,11 @@ export default function SettingsPage({
           font-size: 14px;
           cursor: pointer;
           transition: border-color 0.15s;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 8px;
           text-align: left;
+          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+          background-repeat: no-repeat;
+          background-position: right 14px center;
+          background-size: 12px;
         }
         .font-picker-trigger:hover { border-color: ${t.textMuted}; }
         .font-picker-trigger.open { border-color: ${accent}; }
@@ -969,7 +1012,10 @@ export default function SettingsPage({
                       className="settings-select"
                       id="settings-theme"
                       value={draftTheme}
-                      onChange={e => setDraftTheme(e.target.value)}
+                      onChange={e => {
+                        setDraftTheme(e.target.value);
+                        setThemeName(e.target.value);
+                      }}
                     >
                       {Object.entries(THEMES).map(([key, val]) => (
                         <option key={key} value={key}>{val.name}</option>
@@ -986,7 +1032,6 @@ export default function SettingsPage({
                         style={{ fontFamily: draftFont }}
                       >
                         <span>{getFontDisplayName(draftFont)}</span>
-                        <span style={{ fontSize: 9, opacity: 0.5, flexShrink: 0 }}>▼</span>
                       </button>
                       {showFontPicker && (
                         <div className="font-picker-dropdown">
@@ -1005,7 +1050,6 @@ export default function SettingsPage({
                               onClick={() => { setDraftFont(f.value); setShowFontPicker(false); }}
                             >
                               <span className="font-option-name">{f.label}</span>
-                              {draftFont === f.value && <span className="font-option-check">✓</span>}
                             </button>
                           ))}
                           {customFonts.length > 0 && (
@@ -1022,7 +1066,6 @@ export default function SettingsPage({
                                     onClick={() => { setDraftFont(val); setShowFontPicker(false); }}
                                   >
                                     <span className="font-option-name">{f.name}</span>
-                                    {draftFont === val && <span className="font-option-check">✓</span>}
                                     <button
                                       className="font-option-remove"
                                       onClick={(e) => { e.stopPropagation(); handleRemoveFont(f.name, f.type); }}
@@ -1208,11 +1251,32 @@ export default function SettingsPage({
                         }
                       }}
                     >
-                      <option value="">-- Select a base theme --</option>
+                      <option value="">Select a base theme</option>
                       {Object.entries(THEMES).filter(([k]) => k !== 'custom').map(([key, val]) => (
                         <option key={key} value={key}>{val.name}</option>
                       ))}
                     </select>
+                  </div>
+
+                  <div className="settings-field" style={{ marginTop: -8 }}>
+                    <label className="settings-label" style={{ fontSize: 13, color: t.text }}>Or Import from Monkeytype</label>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <input
+                        className="settings-input"
+                        placeholder="Paste monkeytype.com?customTheme=... link"
+                        value={monkeytypeUrl}
+                        onChange={e => setMonkeytypeUrl(e.target.value)}
+                        style={{ flex: 1 }}
+                      />
+                      <button
+                        className="btn-save"
+                        style={{ width: 'auto', padding: '0 20px' }}
+                        onClick={handleImportMonkeytypeTheme}
+                        disabled={!monkeytypeUrl.trim()}
+                      >
+                        Import
+                      </button>
+                    </div>
                   </div>
 
                   <div className="ctm-grid">
@@ -1312,6 +1376,7 @@ export default function SettingsPage({
                         saveCustomTheme(customColors);
                         setDraftTheme('custom');
                         setThemeName('custom');
+                        if (refreshTheme) refreshTheme();
                         setCustomSaved(true);
                         setTimeout(() => setCustomSaved(false), 3000);
                       }}

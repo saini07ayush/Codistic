@@ -8,13 +8,22 @@ import {
 } from "recharts";
 
 const LANG_COLORS = {
-  python: "#3B82F6",
-  javascript: "#F59E0B",
-  java: "#EF4444",
-  cpp: "#8B5CF6",
-  go: "#06B6D4",
-  rust: "#F97316",
+  python: "#3572A5",
+  javascript: "#F7DF1E",
+  java: "#E76F00",
+  cpp: "#9C6ADE",
+  go: "#00ADD8",
+  rust: "#DEA584",
 };
+
+// Helper: Local date to YYYY-MM-DD
+function toLocalISODate(date) {
+  const d = new Date(date);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
 
 // Helper: Time ago
 function timeAgo(date) {
@@ -36,7 +45,7 @@ function timeAgo(date) {
   return Math.floor(seconds) + " seconds ago";
 }
 
-export default function ProfilePage({ user, theme, accent, onBack, isMono }) {
+export default function ProfilePage({ user, theme, accent, onBack }) {
   const t = theme;
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -100,7 +109,7 @@ export default function ProfilePage({ user, theme, accent, onBack, isMono }) {
   if (sessions.length > 0) {
     const dates = [...new Set(sessions.map(s => {
       const dt = s.timestamp?.toDate ? s.timestamp.toDate() : new Date();
-      return dt.toISOString().split('T')[0];
+      return toLocalISODate(dt);
     }))].sort((a,b) => new Date(b) - new Date(a));
     
     let checkDate = new Date();
@@ -138,7 +147,7 @@ export default function ProfilePage({ user, theme, accent, onBack, isMono }) {
   const sessionFreq = {};
   sessions.forEach(s => {
     if (s.timestamp?.toDate) {
-      const dateStr = s.timestamp.toDate().toISOString().split('T')[0];
+      const dateStr = toLocalISODate(s.timestamp.toDate());
       sessionFreq[dateStr] = (sessionFreq[dateStr] || 0) + 1;
     }
   });
@@ -146,7 +155,7 @@ export default function ProfilePage({ user, theme, accent, onBack, isMono }) {
   for (let i = 83; i >= 0; i--) {
     const d = new Date(today);
     d.setDate(d.getDate() - i);
-    const ds = d.toISOString().split('T')[0];
+    const ds = toLocalISODate(d);
     heatmapData.push({
       date: ds,
       count: sessionFreq[ds] || 0
@@ -454,7 +463,7 @@ export default function ProfilePage({ user, theme, accent, onBack, isMono }) {
                   <div className="session-item" key={s.id}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                       <div className="session-badge" style={{ background: 'transparent', border: `1px solid ${t.border}`, padding: 6, borderRadius: 50 }}>
-                        <div style={{ width: 8, height: 8, borderRadius: '50%', background: (isMono ? t.textMuted : LANG_COLORS[s.language]) || accent, boxShadow: `0 0 6px ${(isMono ? t.textMuted : LANG_COLORS[s.language]) || accent}` }} />
+                        <div style={{ width: 8, height: 8, borderRadius: '50%', background: LANG_COLORS[s.language] || accent, boxShadow: `0 0 6px ${LANG_COLORS[s.language] || accent}` }} />
                       </div>
                       <div>
                         <div className="session-title">{s.language.charAt(0).toUpperCase() + s.language.slice(1)} {s.length} Source</div>

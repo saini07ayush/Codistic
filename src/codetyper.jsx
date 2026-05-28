@@ -15,13 +15,14 @@ const LANGUAGES = ["python", "javascript", "java", "cpp", "go", "rust"];
 const LENGTHS = ["short", "medium", "long"];
 
 const LANG_COLORS = {
-  python: "#3B82F6",
-  javascript: "#F59E0B",
-  java: "#EF4444",
-  cpp: "#8B5CF6",
-  go: "#06B6D4",
-  rust: "#F97316",
+  python: "#3572A5",
+  javascript: "#F7DF1E",
+  java: "#E76F00",
+  cpp: "#9C6ADE",
+  go: "#00ADD8",
+  rust: "#DEA584",
 };
+
 
 export default function CodeTyper() {
   const [paused, setPaused] = useState(false);
@@ -47,6 +48,7 @@ export default function CodeTyper() {
   const [themeName, setThemeName] = useState(() => {
     return localStorage.getItem("codistic-theme") || "dark";
   });
+  const [themeVersion, setThemeVersion] = useState(0);
   const [showThemePicker, setShowThemePicker] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [user, setUser] = useState(null);
@@ -77,9 +79,11 @@ export default function CodeTyper() {
   const timerRef = useRef(null);
   const editorWrapRef = useRef(null);
   const hiddenInputRef = useRef(null);
-  const isMono = themeName === "monochrome" || themeName === "monochromeLight";
+
+  // eslint-disable-next-line no-unused-vars
+  const _tv = themeVersion; // force re-computation when custom theme colors change
   const theme = THEMES[themeName];
-  const accent = isMono ? THEME_ACCENTS[themeName] : (LANG_COLORS[language] || THEME_ACCENTS[themeName]);
+  const accent = THEME_ACCENTS[themeName];
   const t = theme;
 
   // Fullscreen helpers
@@ -563,6 +567,7 @@ export default function CodeTyper() {
       setFontSize={setFontSize}
       themeName={themeName}
       setThemeName={setThemeName}
+      refreshTheme={() => setThemeVersion(v => v + 1)}
       showKeyboard={showKeyboard}
       setShowKeyboard={(v) => { setShowKeyboard(v); localStorage.setItem("codistic-show-keyboard", String(v)); }}
       tabSize={tabSize}
@@ -580,7 +585,6 @@ export default function CodeTyper() {
       onBack={() => setShowProfile(false)} 
       fontFamily={fontFamily}
       onFontChange={setFontFamily}
-      isMono={isMono}
     /></Suspense>
   );
 
@@ -622,7 +626,7 @@ export default function CodeTyper() {
         .ctrl-group { display: flex; gap: 4px; }
         .ctrl-btn { padding: 7px 14px; border-radius: 8px; border: none; background: transparent; color: ${t.textMuted}; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 6px; }
         .ctrl-btn:hover { color: ${t.text}; background: ${t.border}; }
-        .ctrl-btn.active { background: ${t.border}; color: ${t.text}; }
+        .ctrl-btn.active { background: ${t.surface}; color: ${t.text}; border: 1px solid ${t.border}; }
         .ctrl-divider { width: 1px; height: 24px; background: ${t.border}; margin: 0 4px; }
         .ctrl-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
         .reload-btn { padding: 8px 12px; border-radius: 8px; border: 1px solid ${t.border}; background: transparent; color: ${t.textMuted}; font-family: 'JetBrains Mono', monospace; font-size: 12px; cursor: pointer; transition: all 0.15s; }
@@ -760,9 +764,6 @@ export default function CodeTyper() {
                       >
                         <div className="theme-swatch" style={{ background: key === 'monochrome' ? '#888888' : key === 'monochromeLight' ? '#888888' : THEME_ACCENTS[key] }} />
                         {val.name}
-                        {themeName === key && (
-                          <span style={{ marginLeft: 'auto', fontSize: 11, color: accent }}>✓</span>
-                        )}
                       </button>
                     ))}
                     <div className="theme-dropdown-divider" />
@@ -773,16 +774,8 @@ export default function CodeTyper() {
                         onClick={() => { setThemeName('custom'); setShowThemePicker(false); setTimeout(() => hiddenInputRef.current?.focus(), 50); }}
                         role="menuitem"
                       >
-                        <div
-                          className="theme-custom-swatch"
-                          style={{
-                            background: `conic-gradient(${loadCustomTheme()?.bg || '#0a0a0a'}, ${loadCustomTheme()?.accent || '#3B82F6'}, ${loadCustomTheme()?.correct || '#e2e8f0'}, ${loadCustomTheme()?.wrong || '#fc8181'}, ${loadCustomTheme()?.bg || '#0a0a0a'})`,
-                          }}
-                        />
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M12 2C6.48 2 2 6.48 2 12c0 4.26 2.66 7.9 6.42 9.34.2.07.42-.04.46-.25.56-2.6 2.46-3.1 3.12-3.1 1.1 0 2 .9 2 2 0 .73-.4 1.4-1.04 1.76-.18.1-.2.36-.04.49C14.18 23.36 15.56 24 17 22c1.8-2.5 5-5.5 5-10 0-5.52-4.48-10-10-10z"/><circle cx="8" cy="9" r="1.5"/><circle cx="12" cy="6.5" r="1.5"/><circle cx="16" cy="9" r="1.5"/><circle cx="7" cy="13" r="1.5"/></svg>
                         Custom
-                        {themeName === 'custom' && (
-                          <span style={{ marginLeft: 'auto', fontSize: 11, color: accent }}>✓</span>
-                        )}
                         <span
                           className="theme-edit-icon"
                           title="Edit in Settings"
@@ -797,7 +790,7 @@ export default function CodeTyper() {
                         onClick={() => { setShowThemePicker(false); setTimeout(() => hiddenInputRef.current?.focus(), 50); if (user) { setSettingsDeepLink('customTheme'); setShowSettings(true); } else setShowAuth(true); }}
                         role="menuitem"
                       >
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M12 2C6.48 2 2 6.48 2 12c0 4.26 2.66 7.9 6.42 9.34.2.07.42-.04.46-.25.56-2.6 2.46-3.1 3.12-3.1 1.1 0 2 .9 2 2 0 .73-.4 1.4-1.04 1.76-.18.1-.2.36-.04.49C14.18 23.36 15.56 24 17 22c1.8-2.5 5-5.5 5-10 0-5.52-4.48-10-10-10z"/><circle cx="8" cy="9" r="1.5"/><circle cx="12" cy="6.5" r="1.5"/><circle cx="16" cy="9" r="1.5"/><circle cx="7" cy="13" r="1.5"/></svg>
                         Create Custom Theme
                       </button>
                     )}
@@ -842,12 +835,27 @@ export default function CodeTyper() {
           </div>
         </nav>
 
-        <main id="editor-main" className={focusMode ? 'focus-mode' : ''} onClick={() => { setShowThemePicker(false); setShowUserMenu(false); hiddenInputRef.current?.focus(); }}>
+        <main id="editor-main" className={focusMode ? 'focus-mode' : ''} 
+          onMouseDown={(e) => {
+            // Prevent native focus loss on click
+            if (e.target.tagName !== 'BUTTON' && e.target.tagName !== 'A') {
+              e.preventDefault(); 
+            }
+          }}
+          onClick={(e) => { 
+            if (e.target.tagName !== 'BUTTON' && e.target.tagName !== 'A') {
+              setShowThemePicker(false); 
+              setShowUserMenu(false); 
+              hiddenInputRef.current?.focus(); 
+            }
+          }}>
           <div className={`controls ${focusMode ? 'focus-hidden' : ''}`}>
             <div className="ctrl-group">
               {LANGUAGES.map((lang) => (
-                <button key={lang} className={`ctrl-btn ${language === lang ? "active" : ""}`} onClick={() => setLanguage(lang)} aria-pressed={language === lang}>
-                  <span className="ctrl-dot" style={{ background: isMono ? t.textMuted : LANG_COLORS[lang] }} />
+                <button key={lang} className={`ctrl-btn ${language === lang ? "active" : ""}`} onClick={() => setLanguage(lang)} aria-pressed={language === lang}
+                  style={language === lang ? { borderColor: LANG_COLORS[lang] + '60', background: LANG_COLORS[lang] + '12' } : {}}
+                >
+                  <span className="ctrl-dot" style={{ background: LANG_COLORS[lang], boxShadow: language === lang ? `0 0 6px ${LANG_COLORS[lang]}80` : 'none' }} />
                   {lang}
                 </button>
               ))}
@@ -903,6 +911,10 @@ export default function CodeTyper() {
             </div>
             <div
               className={`editor-body${started && !finished ? ' editor-focused' : ''}`}
+              onMouseDown={(e) => {
+                e.preventDefault(); // Prevent text selection/native focus loss
+                if (hiddenInputRef.current) hiddenInputRef.current.focus();
+              }}
               onClick={() => {
                 if (hiddenInputRef.current) hiddenInputRef.current.focus();
               }}
