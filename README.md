@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="codistic-app/public/logo.jpeg" alt="Codistic-Logo" width="80" height="80" style="border-radius: 16px;" />
+  <img src="public/logo.jpeg" alt="Codistic Logo" width="90" height="90" style="border-radius: 20px;" />
 </p>
 
 <h1 align="center">Codistic</h1>
@@ -9,22 +9,30 @@
 </p>
 
 <p align="center">
+  <a href="https://codistic.xyz">Live App</a> •
+  <a href="#the-problem">Why?</a> •
   <a href="#features">Features</a> •
-  <a href="#demo">Demo</a> •
   <a href="#tech-stack">Tech Stack</a> •
-  <a href="#getting-started">Getting Started</a> •
-  <a href="#project-structure">Project Structure</a> •
-  <a href="#configuration">Configuration</a> •
-  <a href="#deployment">Deployment</a> •
-  <a href="#contributing">Contributing</a> •
-  <a href="#license">License</a>
+  <a href="#getting-started">Setup</a> •
+  <a href="#project-structure">Structure</a> •
+  <a href="#how-it-works">How It Works</a> •
+  <a href="#contributing">Contributing</a>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white" alt="React 19" />
+  <img src="https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white" alt="Vite 8" />
+  <img src="https://img.shields.io/badge/Firebase-Auth%20%7C%20Firestore%20%7C%20Storage-FFCA28?logo=firebase&logoColor=black" alt="Firebase" />
+  <img src="https://img.shields.io/badge/Deployed-Vercel-000?logo=vercel&logoColor=white" alt="Vercel" />
 </p>
 
 ---
 
 ## The Problem
 
-Traditional typing trainers measure how fast you can type English. But when you sit down to actually code, you're battling an entirely different set of keystrokes: `{ } ( ) => [] === && || ;`, the symbols, indentation patterns, and nested syntax that no prose-based trainer ever practices. Codistic was built to fix that.
+Traditional typing trainers measure how fast you type English prose. But when you sit down to code, you face a completely different set of keystrokes — `{ } ( ) => [] === && || ;` — the symbols, indentation patterns, and nested syntax that no prose trainer ever practices.
+
+**Codistic** fixes that by pulling **real code from top-tier open-source repositories** and letting you type it keystroke-for-keystroke, with live performance tracking, a dynamic visual engine, and cloud-synced progress.
 
 > *"When the keyboard becomes invisible, the code becomes effortless."*
 
@@ -33,9 +41,8 @@ Traditional typing trainers measure how fast you can type English. But when you 
 ## Features
 
 ### Real Code Snippets from GitHub
-Snippets are pulled **live from top-tier open-source repositories** via the GitHub API. Every session uses actual production code, never contrived exercises or random character strings.
 
-**Supported languages:**
+Every snippet is fetched **live from production-quality open-source repositories** via the GitHub API — never contrived exercises or random character strings.
 
 | Language | Source Repos |
 |----------|-------------|
@@ -46,16 +53,51 @@ Snippets are pulled **live from top-tier open-source repositories** via the GitH
 | Go | `TheAlgorithms/Go` |
 | Rust | `TheAlgorithms/Rust` |
 
+Snippets are intelligently extracted at the **function level**: docstrings are stripped, comments removed, and indentation normalized for a clean typing experience.
+
+---
+
 ### Three Difficulty Tiers
-- **Short**: Quick warm-ups, 5 to 15 lines. Perfect for daily practice.
-- **Warmup (Medium)**: Focused sessions, 15 to 35 lines. Build consistency.
-- **Full (Long)**: Deep sessions, up to 150 lines. Test your endurance.
+
+| Tier | Lines | Best For |
+|------|-------|----------|
+| **Short** | 5 – 15 | Quick warm-ups & daily practice |
+| **Medium** | 15 – 35 | Building consistency |
+| **Long** | up to 150 | Deep-focus endurance sessions |
+
+---
 
 ### Custom URL Loader
-Paste any public code URL and type it instantly. GitHub blob URLs are **auto-converted to raw URLs**. Practice your own codebase, your team's style guide, or an open-source library you're studying.
 
-### 11 Hand-Tuned Themes
-Every theme is carefully adapted for readability and visual comfort during extended sessions.
+Paste **any public code URL** and type it instantly. GitHub blob URLs are **auto-converted to raw URLs** — practice your own codebase, your team's style guide, or any open-source library you're studying.
+
+---
+
+### Interactive Virtual Keyboard
+
+A full **on-screen QWERTY keyboard** that mirrors your physical typing in real time:
+
+- **Next-key highlighting** — the key you need to press next glows with a pulsing accent border, including Shift indicators for uppercase and symbols
+- **Correct / Wrong flash** — keys flash green on correct presses and red on mistakes
+- **Draggable** — grab the drag handle and reposition it anywhere on screen
+- **Resizable** — drag the corner handle to scale between 50% – 150%, persisted to `localStorage`
+- **Three size modes** — compact (floating overlay), small, and full-width
+- **Toggle with `Ctrl + K`** — show or hide instantly without losing position
+
+---
+
+### Focus Mode & Fullscreen
+
+Press `Ctrl + F` or start typing to enter **Focus Mode** — the navbar, footer, controls bar, and stats cards all collapse, leaving only the editor and the virtual keyboard visible. When fullscreen is enabled (configurable in Settings), Focus Mode automatically requests the browser Fullscreen API for a truly distraction-free experience.
+
+- **Escape** exits focus mode
+- **Fullscreen toggle** is independently configurable — you can use Focus Mode with or without actual fullscreen
+
+---
+
+### 11 Hand-Tuned Themes + Custom Theme Maker
+
+Every built-in theme is carefully adapted for readability during extended sessions:
 
 | Theme | Accent | Style |
 |-------|--------|-------|
@@ -71,39 +113,124 @@ Every theme is carefully adapted for readability and visual comfort during exten
 | Monochrome | `#ffffff` | Pure black & white |
 | Paper | `#000000` | Light monochrome, ink on paper |
 
-### 6 Monospace Editor Fonts
-Choose from **JetBrains Mono**, **Fira Code**, **Source Code Pro**, **Inconsolata**, **Space Mono**, and **Ubuntu Mono**, with adjustable font size from 12 to 24px.
+#### Custom Theme Maker
+
+Build your **own theme** from scratch by picking 6 essential colors:
+
+| Token | Controls |
+|-------|----------|
+| **Background** | Main page background |
+| **Surface** | Cards & panels |
+| **Text** | Primary text color |
+| **Accent** | Highlights & buttons |
+| **Correct** | Correctly typed characters |
+| **Error** | Mistakes & wrong characters |
+
+All remaining tokens (borders, muted text, overlays, etc.) are **auto-derived** using luminance detection and color blending — your 6 picks produce a complete, coherent 14-token theme.
+
+#### Monkeytype Theme Import
+
+Already have a theme you love on Monkeytype? Paste the Monkeytype share URL (containing `?customTheme=...`) and Codistic will **decode and apply it instantly**.
+
+---
+
+### 6 Built-in Fonts + Custom Font Manager
+
+Choose from **JetBrains Mono**, **Fira Code**, **Source Code Pro**, **Inconsolata**, **Space Mono**, and **Ubuntu Mono**, with adjustable font size from 12 – 24px.
+
+#### Custom Font Manager
+
+Go beyond the defaults:
+
+- **Google Fonts** — type any Google Font name and Codistic validates it in real time using the Font Loading API, then injects it via stylesheet
+- **Upload your own** — drag-and-drop or browse for `.ttf`, `.woff`, `.woff2`, or `.otf` files (up to 2 MB each, max 10 uploaded fonts)
+- Uploaded fonts are stored in **IndexedDB** as base64 data URLs and injected via `@font-face` — they persist across sessions with zero network requests
+- Remove any custom font with one click; if the removed font was active, Codistic falls back to JetBrains Mono
+
+---
 
 ### Real-Time Performance Dashboard
-- **Live stats**: WPM, accuracy, elapsed time, and progress tracked in real time as you type.
-- **Performance Matrix**: Area chart of WPM trends across your last 30 sessions, powered by Recharts.
-- **Activity Heatmap**: GitHub-style heatmap showing your practice consistency over the last 12 weeks.
-- **Daily Streak**: Consecutive days practiced.
-- **Proficiency Zenith**: Your top language with mastery progress, lines codified, and average accuracy.
-- **Level System**: Progress through ranks from Novice I to Apex V.
+
+#### Live Stats
+WPM, accuracy, elapsed time, and progress are tracked **in real time** as you type. The navbar dynamically switches between showing your **lifetime averages** (when idle) and **current session stats** (when typing).
+
+#### Performance Matrix
+An area chart of WPM trends across your **last 30 sessions**, powered by Recharts with a glowing gradient fill and custom tooltips.
+
+#### Activity Heatmap
+A GitHub-style contribution heatmap showing your practice consistency over the **last 12 weeks** (84 days), with intensity levels based on daily session count.
+
+#### Daily Streak
+Consecutive days practiced, calculated from Firestore timestamps with local timezone handling.
+
+#### Proficiency Zenith
+Your **top language** with:
+- Peak WPM
+- Average accuracy
+- Lines codified (estimated from session difficulty)
+- Mastery progress bar (WPM / 150 target)
+
+#### Level System
+Progress through ranks based on total session count:
+
+| Sessions | Rank |
+|----------|------|
+| 0 – 9 | Novice I |
+| 10 – 24 | Adept II |
+| 25 – 49 | Pro III |
+| 50 – 99 | Elite IV |
+| 100+ | Apex V |
+
+---
 
 ### Dynamic Background Engine
-A canvas-based particle system renders falling code glyphs (`{ } => </> || && == [] ;`, `function`, `const`, `return`, etc.) that **accelerate with your WPM**. The faster you type, the more alive the background becomes.
+
+A canvas-based particle system renders **80 falling code glyphs** (`{ } => </> || && == [] ;`, `function`, `const`, `return`, etc.) that **accelerate with your WPM**. Speed changes use smooth interpolation to avoid jarring transitions. The faster you type, the more alive the background becomes.
+
+---
 
 ### Cloud-Synced Progress
-Sign in with **Google** or **email/password** (Firebase Auth). All session data, preferences, and stats are persisted to **Firestore** and follow you across devices.
+
+Sign in with **Google** or **email/password** (Firebase Auth). All session data, preferences, and stats are persisted to **Cloud Firestore** and follow you across devices.
+
+- **Profile picture uploads** via Firebase Storage
+- **Display name editing** with real-time profile updates
+
+---
 
 ### Pause & Resume
-Mid-session pause support. Freeze the timer and resume without losing progress.
+
+Press `Ctrl + P` mid-session to freeze the timer. Resume without losing any progress — your elapsed time stays accurate.
+
+---
 
 ### Comprehensive Settings Dashboard
-A tab-based settings page with:
-- **Account**: Display name, profile picture (uploaded to Firebase Storage), email display.
-- **Appearance**: Theme, font, and font size selection with a **live code preview** panel.
-- **Shortcuts**: Reference for all keyboard controls.
-- **About**: Origin story, philosophy, feature breakdown, and technology credits.
-- **Contact**: Email and GitHub links with inline feedback form.
+
+A sidebar-tabbed settings page with five sections:
+
+| Tab | Contents |
+|-----|----------|
+| **Account** | Display name, profile picture upload (Firebase Storage), email display |
+| **Appearance** | Theme picker (built-in + custom), font picker (built-in + custom), font size slider, virtual keyboard toggle, tab size selector (2/4/8 spaces), focus fullscreen toggle, live code preview panel |
+| **Shortcuts** | Complete keyboard shortcut reference |
+| **About** | Origin story, philosophy, feature breakdown, and technology credits |
+| **Contact** | Email and GitHub links with inline feedback form |
+
+---
+
+### Performance Optimizations
+
+- **Lazy-loaded pages** — `AuthPage`, `ProfilePage`, and `SettingsPage` are loaded via `React.lazy()` + `Suspense` to keep the initial bundle lean
+- **Async font loading** — optional editor fonts load with `media="print"` and swap on load
+- **Font preconnects** — Google Fonts connections are prewarmed at HTML level
+- **Snippet retry logic** — failed GitHub API calls are retried up to 5 times with 600ms delays
+- **LocalStorage persistence** — theme, font, font size, tab size, keyboard visibility, keyboard scale, and fullscreen preference are all persisted client-side
 
 ---
 
 ## Demo
 
-> **Live:** Deployed on Vercel (check the repo for the latest URL).
+> **Live at [codistic.xyz](https://codistic.xyz)** — deployed on Vercel.
 
 ### Core Typing Interface
 
@@ -127,6 +254,13 @@ A tab-based settings page with:
 │  ┌─WPM──┐ ┌─ACC──┐ ┌─TIME─┐ ┌─PROG─┐           │
 │  │  47  │ │ 96%  │ │ 23.4 │ │  42  │           │
 │  └──────┘ └──────┘ └──────┘ └──────┘           │
+│  ┌────────────────────────────────────────────┐  │
+│  │ `~ 1! 2@ 3# 4$ 5% 6^ 7& 8* 9( 0) -_ =+ ⌫│  │
+│  │ Tab  Q  W  E  R  T  Y  U  I  O  P  [  ]  \│  │
+│  │ Caps  A  S  D  F  G  H  J  K  L  ;  '  Ent│  │
+│  │ Shift  Z  X  C  V  B  N  M  ,  .  /  Shift │  │
+│  │              codistic.xyz                   │  │
+│  └────────────────────────────────────────────┘  │
 └──────────────────────────────────────────────────┘
 ```
 
@@ -141,8 +275,9 @@ A tab-based settings page with:
 | **Authentication** | [Firebase Auth](https://firebase.google.com/docs/auth) (Google & Email/Password) |
 | **Database** | [Cloud Firestore](https://firebase.google.com/docs/firestore) |
 | **File Storage** | [Firebase Storage](https://firebase.google.com/docs/storage) (avatar uploads) |
+| **Font Storage** | [IndexedDB](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API) (uploaded custom fonts) |
 | **Charts** | [Recharts](https://recharts.org) |
-| **Routing** | [React Router v7](https://reactrouter.com) (with `pushState` URL management) |
+| **Routing** | [React Router v7](https://reactrouter.com) + `pushState` URL management |
 | **Snippet Source** | [GitHub REST API](https://docs.github.com/en/rest) |
 | **Fonts** | [Google Fonts](https://fonts.google.com) (DM Sans, Syne, JetBrains Mono, Fira Code, etc.) |
 | **Hosting** | [Vercel](https://vercel.com) |
@@ -156,7 +291,7 @@ A tab-based settings page with:
 - **Node.js** ≥ 18
 - **npm** ≥ 9
 - A **Firebase** project with Auth, Firestore, and Storage enabled
-- A **GitHub Personal Access Token** (for the snippet API, avoids rate limits)
+- A **GitHub Personal Access Token** (for the snippet API — avoids rate limits)
 
 ### 1. Clone the Repository
 
@@ -185,7 +320,7 @@ VITE_FIREBASE_APP_ID=your_app_id
 VITE_GITHUB_TOKEN=ghp_your_github_personal_access_token
 ```
 
-> **Note:** The GitHub token needs only **public repo read access**. It is used to avoid the 60 requests/hour unauthenticated rate limit.
+> **Note:** The GitHub token needs only **public repo read access**. It is used to avoid the 60 requests/hour unauthenticated rate limit. With a token, the limit increases to **5,000/hour**.
 
 ### 4. Run the Dev Server
 
@@ -207,30 +342,31 @@ npm run preview   # preview the production build locally
 ## Project Structure
 
 ```
-codistic-app/
+Codistic/
 ├── public/
-│   ├── logo.jpeg              # App logo (favicon & branding)
-│   ├── favicon.svg
-│   └── icons.svg
+│   ├── logo.jpeg                # App logo (favicon & branding)
+│   └── icons.svg                # SVG icon sprite
 ├── src/
-│   ├── main.jsx               # React DOM entry point
-│   ├── App.jsx                # Root component (renders CodeTyper)
-│   ├── codetyper.jsx          # Core typing engine & main UI
-│   ├── AuthPage.jsx           # Sign-in / sign-up page
-│   ├── ProfilePage.jsx        # Statistics dashboard (charts, heatmap, streak)
-│   ├── SettingsPage.jsx       # Settings dashboard (account, appearance, about, etc.)
-│   ├── DynamicBackground.jsx  # Canvas particle system (falling code glyphs)
-│   ├── themes.js              # Theme & accent color definitions (11 themes)
-│   ├── firebase.js            # Firebase init (Auth, Firestore, Storage)
-│   ├── index.css              # Global base styles
-│   ├── App.css                # App-level styles
+│   ├── main.jsx                 # React DOM entry point
+│   ├── App.jsx                  # Root component
+│   ├── codetyper.jsx            # Core typing engine & main UI
+│   ├── AuthPage.jsx             # Sign-in / sign-up page
+│   ├── ProfilePage.jsx          # Statistics dashboard (charts, heatmap, streak)
+│   ├── SettingsPage.jsx         # Settings dashboard (5 tabs)
+│   ├── VirtualKeyboard.jsx      # Interactive on-screen keyboard
+│   ├── DynamicBackground.jsx    # Canvas particle system (falling code glyphs)
+│   ├── themes.js                # 11 themes + custom theme builder
+│   ├── fontManager.js           # Google Fonts + uploaded font management
+│   ├── firebase.js              # Firebase init (Auth, Firestore, Storage)
+│   ├── index.css                # Global base styles
+│   ├── App.css                  # App-level styles
 │   └── services/
-│       └── githubSnippets.js  # GitHub API integration for fetching code snippets
-├── index.html                 # HTML entry point (font preloading)
-├── vite.config.js             # Vite configuration
-├── vercel.json                # Vercel rewrites & CORS headers
+│       └── githubSnippets.js    # GitHub API integration for fetching snippets
+├── index.html                   # HTML entry point (font preloading)
+├── vite.config.js               # Vite configuration
+├── vercel.json                  # Vercel rewrites & CORS headers
 ├── package.json
-├── .env                       # Environment variables (not committed)
+├── .env                         # Environment variables (not committed)
 └── .gitignore
 ```
 
@@ -238,12 +374,14 @@ codistic-app/
 
 | File | Purpose |
 |------|---------|
-| `codetyper.jsx` | The heart of the app. Manages typing state, keypress handling, WPM/accuracy calculation, snippet loading, navigation routing, and renders the complete typing interface with inline CSS-in-JS. |
-| `githubSnippets.js` | Fetches file lists from curated GitHub repos, extracts clean function-level snippets, strips comments/docstrings, normalizes indentation, and handles fallbacks. Supports short/medium/long difficulty tiers. |
-| `ProfilePage.jsx` | Full statistics dashboard with Recharts area chart, activity heatmap, daily streak tracker, proficiency metrics, level system, and recent session log. |
-| `SettingsPage.jsx` | Multi-tab settings with account management, appearance controls (with live preview), keyboard shortcut reference, detailed about page with origin story, and contact section. |
-| `DynamicBackground.jsx` | Canvas-based animation rendering 80 particles of code symbols that fall at speeds proportional to the user's current WPM. Uses smooth interpolation to avoid jarring speed changes. |
-| `themes.js` | Exports `THEMES` (11 full theme objects with 13+ color tokens each) and `THEME_ACCENTS` for per-theme accent colors. |
+| `codetyper.jsx` | The heart of the app. Manages typing state, keypress handling, WPM/accuracy calculation, snippet loading, focus mode, pause/resume, fullscreen, URL routing, and renders the complete typing interface with CSS-in-JS. |
+| `githubSnippets.js` | Fetches file lists from curated GitHub repos, extracts clean function-level snippets, strips comments/docstrings, normalizes indentation, and handles fallbacks. Supports short/medium/long difficulty tiers with retry logic. |
+| `VirtualKeyboard.jsx` | Full QWERTY keyboard with next-key highlighting, correct/wrong keystroke flash, drag-to-reposition, corner-handle resize (0.5× – 1.5×), compact/small/full modes, and `Ctrl+K` toggle. |
+| `ProfilePage.jsx` | Statistics dashboard with Recharts area chart, 12-week activity heatmap, daily streak tracker, proficiency zenith metrics, level system, and scrollable session log. |
+| `SettingsPage.jsx` | 5-tab settings: account management, appearance controls (theme + custom theme maker + font + custom font manager + keyboard + tab size + fullscreen toggle with live preview), keyboard shortcut reference, about page, and contact section. |
+| `fontManager.js` | Manages two font sources: Google Fonts (validated via Font Loading API, stored in localStorage) and uploaded font files (stored as base64 in IndexedDB with `@font-face` injection). Supports `.ttf`, `.woff`, `.woff2`, `.otf`. |
+| `DynamicBackground.jsx` | Canvas animation rendering 80 particles of code symbols that fall at speeds proportional to the user's current WPM, with smooth interpolation to avoid jarring speed changes. |
+| `themes.js` | Exports 11 built-in themes (14 color tokens each), accent colors, and the custom theme system (`buildThemeFromColors` derives 14 tokens from 6 user-picked colors using luminance detection and color blending). |
 
 ---
 
@@ -280,7 +418,7 @@ users/
 2. Generate a **Fine-grained** or **Classic** token with `public_repo` read access.
 3. Add it as `VITE_GITHUB_TOKEN` in your `.env`.
 
-> Without a token, the GitHub API limits you to 60 requests/hour. With a token, the limit increases to 5,000/hour.
+> Without a token, the GitHub API limits you to **60 requests/hour**. With a token, the limit increases to **5,000/hour**.
 
 ### Vercel Deployment
 
@@ -301,7 +439,7 @@ flowchart TD
     E --> F[Extract function-level snippets]
     F --> G[Strip comments & normalize indent]
     G --> H[Display in editor UI]
-    H --> I[User types - keydown events captured]
+    H --> I[User types — keydown events captured]
     I --> J[Real-time WPM & accuracy calculation]
     J --> K{Snippet complete?}
     K -->|No| I
@@ -312,14 +450,38 @@ flowchart TD
 
 ---
 
-## Keyboard Controls
+## Keyboard Shortcuts
 
-| Key | Action |
-|-----|--------|
+| Shortcut | Action |
+|----------|--------|
 | Any character key | Start typing / insert character |
-| `Tab` | Insert 4-space indentation |
+| `Tab` | Insert indentation (configurable: 2, 4, or 8 spaces) |
 | `Enter` | Insert newline |
 | `Backspace` | Delete last character |
+| `Ctrl + F` | Toggle focus mode |
+| `Ctrl + K` | Show / hide virtual keyboard |
+| `Ctrl + R` | Load a new snippet |
+| `Ctrl + P` | Pause / resume current session |
+| `Escape` | Exit focus mode |
+
+---
+
+## Client-Side Storage Map
+
+Codistic persists user preferences locally for instant load times:
+
+| Key | Storage | Purpose |
+|-----|---------|---------|
+| `codistic-theme` | localStorage | Selected theme name |
+| `codistic-font` | localStorage | Selected font-family value |
+| `codistic-fontsize` | localStorage | Editor font size (px) |
+| `codistic-tabsize` | localStorage | Tab indentation width |
+| `codistic-show-keyboard` | localStorage | Virtual keyboard visibility |
+| `codistic-kb-scale` | localStorage | Virtual keyboard zoom level |
+| `codistic-focus-fullscreen` | localStorage | Fullscreen on focus mode |
+| `codistic-custom-theme` | localStorage | Custom theme color definitions |
+| `codistic-custom-google-fonts` | localStorage | Saved Google Font names |
+| `codistic-fonts` | IndexedDB | Uploaded font files (base64) |
 
 ---
 
@@ -334,12 +496,15 @@ Contributions are welcome! Here's how to get started:
 5. Open a **Pull Request** against `main`.
 
 ### Ideas for Contributions
-- Additional language support (TypeScript, Ruby, PHP, etc.)
+
+- Additional language support (TypeScript, Ruby, PHP, Swift, Kotlin)
 - Multiplayer / race mode
-- More detailed per-character accuracy analysis
+- Per-character accuracy heatmap analysis
 - Mobile-responsive layout improvements
 - Syntax highlighting in the editor
 - Offline mode with cached snippets
+- Sound effects / haptic feedback for keystrokes
+- Leaderboards & global rankings
 
 ---
 
@@ -351,5 +516,5 @@ This project is open source. See the repository for license details.
 
 <p align="center">
   <strong>Crafted with obsession by a developer who just wanted to type code faster.</strong><br/>
-  <sub>Made in India</sub>
+  <sub>Made in India 🇮🇳</sub>
 </p>
