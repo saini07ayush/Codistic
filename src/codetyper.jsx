@@ -10,6 +10,7 @@ const ProfilePage = lazy(() => import("./ProfilePage"));
 const SettingsPage = lazy(() => import("./SettingsPage"));
 import DynamicBackground from "./DynamicBackground";
 import VirtualKeyboard from "./VirtualKeyboard";
+import CustomCursor from "./CustomCursor";
 
 const LANGUAGES = ["python", "javascript", "java", "cpp", "go", "rust"];
 const LENGTHS = ["short", "medium", "long"];
@@ -552,10 +553,10 @@ export default function CodeTyper() {
     </div>
   );
 
-  if (showAuth) return <Suspense fallback={suspenseFallback}><AuthPage theme={t} accent={accent} onBack={() => setShowAuth(false)} onSuccess={() => setShowAuth(false)} /></Suspense>;
+  if (showAuth) return <><CustomCursor accent={accent} /><Suspense fallback={suspenseFallback}><AuthPage theme={t} accent={accent} onBack={() => setShowAuth(false)} onSuccess={() => setShowAuth(false)} /></Suspense></>;
   
   if (showSettings && user) return (
-    <Suspense fallback={suspenseFallback}><SettingsPage 
+    <><CustomCursor accent={accent} /><Suspense fallback={suspenseFallback}><SettingsPage 
       user={user} 
       theme={t} 
       accent={accent} 
@@ -574,23 +575,24 @@ export default function CodeTyper() {
       setTabSize={(v) => { setTabSize(v); localStorage.setItem("codistic-tabsize", String(v)); }}
       focusFullscreen={focusFullscreen}
       setFocusFullscreen={(v) => { setFocusFullscreen(v); localStorage.setItem("codistic-focus-fullscreen", String(v)); }}
-    /></Suspense>
+    /></Suspense></>
   );
   
   if (showProfile && user) return (
-    <Suspense fallback={suspenseFallback}><ProfilePage 
+    <><CustomCursor accent={accent} /><Suspense fallback={suspenseFallback}><ProfilePage 
       user={user} 
       theme={t} 
       accent={accent} 
       onBack={() => setShowProfile(false)} 
       fontFamily={fontFamily}
       onFontChange={setFontFamily}
-    /></Suspense>
+    /></Suspense></>
   );
 
-  return (
-    <>
-      <style>{`
+    return (
+      <>
+        <CustomCursor accent={accent} />
+        <style>{`
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         *:focus-visible { outline: 2px solid ${accent}; outline-offset: 2px; border-radius: 4px; }
         .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
